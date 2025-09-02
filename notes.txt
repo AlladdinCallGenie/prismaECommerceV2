@@ -1,0 +1,110 @@
+-------------> ZOD <--------------
+import * as z from "zod"; 
+ 
+const Player = z.object({ 
+  username: z.string(),
+  xp: z.number()
+});
+
+Given any Zod schema, use .parse to validate an input. 
+If it's valid, Zod returns a strongly-typed deep clone of the input.
+Player.parse({ username: "billie", xp: 100 }); 
+// => returns { username: "billie", xp: 100 }
+
+await Player.parseAsync({ username: "billie", xp: 100 }); 
+
+Handling errors
+When validation fails, the .parse() method will throw a ZodError instance with granular 
+information about the validation issues.
+
+try {
+  Player.parse({ username: 42, xp: "100" });
+} catch(error){
+  if(error instanceof z.ZodError){
+    error.issues; 
+    /* [
+      {
+        expected: 'string',
+        code: 'invalid_type',
+        path: [ 'username' ],
+        message: 'Invalid input: expected string'
+      },
+      {
+        expected: 'number',
+        code: 'invalid_type',
+        path: [ 'xp' ],
+        message: 'Invalid input: expected number'
+      }
+    ] */
+  }
+}
+
+To avoid a try/catch block, you can use the .safeParse() method to get back a plain result object 
+containing either the successfully parsed data or a ZodError.
+const result = Player.safeParse({ username: 42, xp: "100" });
+if (!result.success) {
+  result.error;   // ZodError instance
+} else {
+  result.data;    // { username: string; xp: number }
+}
+
+
+
+In Zod, z.infer is a utility type used to extract the static TypeScript type from a Zod schema. 
+Zod schemas are runtime validation objects, but they also carry rich type information that 
+TypeScript can leverage at compile time.
+How z.infer works:-
+Define a Zod Schema: You first define your data structure using Zod's schema builders 
+(e.g., z.object(), z.string(), z.array()).
+
+    import { z } from 'zod';
+
+    const UserSchema = z.object({
+      id: z.string().uuid(),
+      name: z.string().min(1),
+      email: z.string().email(),
+      age: z.number().int().positive(),
+    });
+
+Infer the Type: You then use z.infer<typeof YourSchema> to get the corresponding TypeScript type.
+
+
+    type User = z.infer<typeof UserSchema>;
+
+    // User will be inferred as:
+    // type User = {
+    //   id: string;
+    //   name: string;
+    //   email: string;
+    //   age: number;
+    // };
+
+Primitives:
+z.string(): For string values. Can be combined with modifiers like .min(), .max(), .email(), .url().
+z.number(): For numeric values. Can be combined with modifiers like .min(), .max(), .int(), .positive().
+z.boolean(): For boolean values (true/false).
+z.date(): For Date objects.
+z.bigint(): For BigInt values.
+z.symbol(): For Symbol values.
+Empty Types:
+z.undefined(): Represents the undefined type.
+z.null(): Represents the null type.
+z.void(): Represents the void type (often used in function return types).
+Special Types:
+z.any(): Allows any value, effectively bypassing type checking for that field.
+z.unknown(): Similar to any but requires type narrowing before use.
+z.never(): Indicates that a value should never occur, useful for exhaustive type checking.
+Complex Types:
+z.object(): To define an object schema, containing other Zod schemas for its properties.
+z.array(): To define an array of a specific type.
+z.union(): To allow a field to be one of several specified types.
+z.enum(): To define a field that must be one of a set of predefined string values.
+z.literal(): To define a field that must be a specific literal value (e.g., z.literal("hello")).
+Making Fields Optional:
+By default, all fields in a Zod schema are required. To make a field optional, the .optional() modifier is appended to its schema definition.
+
+
+
+
+
+
