@@ -19,10 +19,7 @@ export const UserSchema = z.object({
     .trim()
     .min(1, { message: "lastName must be atleast 3 characters" })
     .max(100, { message: "lastName must not be more than 100 characters" }),
-  password: z
-    .string()
-    .trim()
-    .min(8, { message: "password must be atleast 8 characters" }),
+  password: z.string().trim().min(8, { message: "password must be atleast 8 characters" }),
   role: z.enum(Role).optional(),
 });
 
@@ -72,7 +69,7 @@ export const ProductSchema = z.object({
     .max(100, { message: "category length should not exceed 100 characters" }),
   stock: z.number().int().positive(),
   discount: z.number().int().positive(),
-  image: z.string(),
+  // image: z.string(),
 });
 
 const CartSchema = z.object({

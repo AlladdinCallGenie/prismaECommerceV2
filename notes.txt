@@ -105,6 +105,136 @@ By default, all fields in a Zod schema are required. To make a field optional, t
 
 
 
+--------------------> File System <---------------
+import fs from "fs";
+
+// Write file
+fs.writeFileSync("example.txt", "Hello World");
+
+// Read file
+const data = fs.readFileSync("example.txt", "utf-8");
+console.log(data);
+
+// Delete file
+fs.unlinkSync("example.txt");
 
 
+Typical scenarios:
+1) File Uploads [Files are either stored locally or uploaded directly to cloud storage]
+2) File Downloads/Serving [Serving files to clients.Example: sending a PDF report to the user.]
+3)Static Files:- Serving images, CSS, JS via express.static() or CDNs.
+4) File Streams (Efficient Reading/Writing) Useful for large files (e.g., videos, logs).Streams prevent loading entire file into memory.
+5) File Metadata File size, type, creation time, etc. (fs.statSync).
 
+3. Industry Best Practices in File Handling
+
+Here’s what most companies follow:
+
+Storage Strategies
+
+Do not store large files directly on your server’s disk.
+
+Local storage is fine for development or small apps, but not scalable.
+
+Use cloud storage:
+
+Amazon S3, Google Cloud Storage, Azure Blob Storage.
+
+Store only file URLs/paths in your database, not the file itself.
+
+Content Delivery Network (CDN) for faster access worldwide.
+
+File Upload Practices
+Validate file type & size (security + performance).
+Sanitize file names
+Use unique identifiers (UUID, timestamp) instead of original filenames to avoid conflicts.
+File Security
+Never trust user input paths (avoid ../ attacks).
+Use private buckets for sensitive files and generate signed URLs with expiry times.
+Set proper file permissions (read/write/execute).
+Performance
+Use streams for large files instead of reading entire file into memory.
+Compress files before storage (gzip, WebP for images).
+Offload media-heavy workloads to specialized services (e.g., Cloudinary for images/videos).
+Database Integration
+Store metadata only (file name, size, type, URL, owner).
+
+Example table:
+CREATE TABLE files (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id),
+  filename TEXT,
+  mimetype TEXT,
+  size INT,
+  url TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+Logging & Monitoring
+Log file access (who uploaded/downloaded).
+Monitor storage size (to avoid exceeding quotas)
+
+
+fs.writeFile("example.txt", "Hello, Node.js!", (err) => {
+  if (err) throw err;
+  console.log("File created & data written!");
+});
+fs.writeFileSync("example.txt", "Hello, Node.js!");
+console.log("File created & data written!");
+Use writeFile for creating new files or replacing content.
+If file already exists → content will be overwritten.
+
+fs.appendFile("example.txt", "\nThis is new content.", (err) => {
+  if (err) throw err;
+  console.log("Content appended!");
+});
+
+fs.readFile("example.txt", "utf-8", (err, data) => {
+  if (err) throw err;
+  console.log("File content:", data);
+});
+const data = fs.readFileSync("example.txt", "utf-8");
+console.log("File content:", data);
+
+fs.unlink("example.txt", (err) => {
+  if (err) throw err;
+  console.log("File deleted!");
+});
+
+fs.rename("example.txt", "renamed.txt", (err) => {
+  if (err) throw err;
+  console.log("File renamed!");
+});
+
+fs.stat("renamed.txt", (err, stats) => {
+  if (err) throw err;
+  console.log("File size:", stats.size);
+  console.log("Created:", stats.birthtime);
+});
+
+// Create folder
+fs.mkdir("myFolder", (err) => {
+  if (err) throw err;
+  console.log("Folder created!");
+});
+
+// Delete folder
+fs.rmdir("myFolder", (err) => {
+  if (err) throw err;
+  console.log("Folder deleted!");
+});
+
+fs.readdir(".", (err, files) => {
+  if (err) throw err;
+  console.log("Files in current folder:", files);
+});
+
+Streams (For Large Files)
+Instead of loading the whole file in memory → use streams.
+const readStream = fs.createReadStream("bigfile.txt", "utf-8");
+readStream.on("data", (chunk) => {
+  console.log("Chunk:", chunk);
+});
+
+DiskStorage → Saves files to local server (not scalable for production).
+MemoryStorage → Keeps file in memory buffer, then you upload it to cloud storage (S3, GCS, etc.).

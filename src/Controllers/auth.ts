@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import prisma from "../Config/config";
 
 import {
@@ -7,8 +7,13 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../Utils/utilities";
+import { error } from "console";
 
-export const register = async (req: Request, res: Response) => {
+export const register = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { email, username, firstName, lastName, password, role } = req.body;
     const isUser = await prisma.user.findUnique({ where: { email: email } });
@@ -28,21 +33,23 @@ export const register = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "User created successfully...." });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Failed to register User " });
+    next(error);
   }
 };
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { email, password } = req.body;
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user)
-      return res.status(400).json({ message: "Invalid credentials..." });
+    if (!user) throw new Error("Invalid Credentials...");
+
     const isPasswordValid = await compareHash(password, user.password);
 
-    if (!isPasswordValid)
-      return res.status(400).json({ error: "Invalid credentials..." });
+    if (!isPasswordValid) throw new Error("Invalid Credentials...");
 
     const accessToken = generateAccessToken({ email: user.email });
     const refreshToken = generateRefreshToken({ id: user.id });
@@ -59,7 +66,6 @@ export const login = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "LoggedIn successfull", loggedInUser });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Login Failed ..." });
+    next(error);
   }
 };
