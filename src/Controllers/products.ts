@@ -1,18 +1,38 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import prisma from "../Config/config";
-import { string } from "zod";
 
-export const getAllProducts = async (req: Request, res: Response) => {
+export const getAllProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
     const products = await prisma.product.findMany({
       where: { isActive: true },
+      skip,
+      take: limit,
     });
-    res.status(200).json(products);
+    const total = await prisma.product.count();
+
+    res.status(200).json({
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      products,
+    });
   } catch (error) {
-    res.status(500).json({ error: "Failed to Fetch all products..." });
+    next(error);
   }
 };
-export const getProductById = async (req: Request, res: Response) => {
+export const getProductById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const product = await prisma.product.findUnique({
@@ -21,27 +41,46 @@ export const getProductById = async (req: Request, res: Response) => {
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.status(200).json({ product });
   } catch (error) {
-    res.status(500).json({ error: "Failed to Fetch product..." });
+    next(error);
   }
 };
-export const getByCategory = async (req: Request, res: Response) => {
+export const getByCategory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { name } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
     if (!name || typeof name !== "string") {
       return res.status(400).json({ error: "Category name is required" });
     }
 
     const products = await prisma.product.findMany({
-      where: { category: { name: name } },
+      where: { category: { name: name, isActive: true } },
+      skip,
+      take: limit,
+    });
+    const total = await prisma.product.count({
+      where: { category: { name: name, isActive: true } },
     });
 
-    if (products.length === 0) {
+    if (total <= 0) {
       return res
         .status(404)
         .json({ message: "No products found for this category" });
     }
-    res.status(200).json(products);
+
+    res.status(200).json({
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      products,
+    });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch products" });
+    next(error);
   }
 };

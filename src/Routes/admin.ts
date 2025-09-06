@@ -25,6 +25,10 @@ import {
   deleteCoupon,
   activateCoupon,
   allCoupon,
+  allOrders,
+  updateStatus,
+  deactivateUser,
+  activateUser,
 } from "../Controllers/admin";
 
 const router = Router();
@@ -33,6 +37,8 @@ router.get("/users", isAuthenticated, checkRole([Role.ADMIN]), allUsers);
 router.get("/users/:id", isAuthenticated, checkRole([Role.ADMIN]), getById);
 router.put("/users/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(UserSchema), updateUser);
 router.delete("/users/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteUser);
+router.put("/users/deactivate/:id", isAuthenticated, checkRole([Role.ADMIN]), deactivateUser);
+router.put("/users/activate/:id", isAuthenticated, checkRole([Role.ADMIN]), activateUser);
 
 // ---------->Admin Category Routes<----------
 router.get("/categories", isAuthenticated, checkRole([Role.ADMIN]), allcategories);
@@ -40,9 +46,9 @@ router.post("/category", isAuthenticated, checkRole([Role.ADMIN]), validate(Cate
 router.get("/category/:id", isAuthenticated, checkRole([Role.ADMIN]), getCategoryById);
 router.delete("/category/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteCategory);
 
-// ---------->Admin Product Routes<----------
-router.post("/product", isAuthenticated, checkRole([Role.ADMIN]), upload.single("image"), addProduct);
-router.put("/product/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(ProductSchema), updateProduct);
+// ---------->Admin Product Routes<----------                       validate(ProductSchema)
+router.post("/product", isAuthenticated, checkRole([Role.ADMIN]), upload.single("image"), validate(ProductSchema), addProduct);
+router.put("/product/:id", isAuthenticated, checkRole([Role.ADMIN]), upload.single("image"), updateProduct);
 router.delete("/product/delete/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteProduct);
 router.put("/product/deactive/:id", isAuthenticated, checkRole([Role.ADMIN]), deActiveProduct);
 router.put("/product/active/:id", isAuthenticated, checkRole([Role.ADMIN]), activateProduct);
@@ -56,6 +62,7 @@ router.delete("/coupon/delete/:id", isAuthenticated, checkRole([Role.ADMIN]), de
 router.put("/coupon/activate/:id", isAuthenticated, checkRole([Role.ADMIN]), activateCoupon);
 
 // ---------->Admin Order Routes<----------
-// get all orders
-// updated orderstatus
+router.get("/orders/all", isAuthenticated, checkRole([Role.ADMIN]), allOrders);
+router.put("/order/:id", isAuthenticated, checkRole([Role.ADMIN]), updateStatus);
+
 export default router;

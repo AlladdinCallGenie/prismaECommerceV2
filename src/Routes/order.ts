@@ -5,8 +5,9 @@ import { isAuthenticated } from "../Middlewares/auth";
 const router = Router();
 
 router.post("/checkout", isAuthenticated, placeOrder);
-router.put("/cancel", isAuthenticated, cancelOrder);
+router.put("/cancel/:id", isAuthenticated, cancelOrder);
 router.get("/history", isAuthenticated, orderHistory);
-router.get("/status", isAuthenticated, checkStatus);
+router.get("/status/:id", isAuthenticated, checkStatus);
 
+//repeatOrder route
 export default router;

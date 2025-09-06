@@ -1,17 +1,25 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import prisma from "../Config/config";
 import { hashPassword } from "../Utils/utilities";
 
-export const getMyProfile = async (req: Request, res: Response) => {
+export const getMyProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const user = req.user;
     if (!user) return res.status(401).json({ error: "Not loggedIn" });
     res.json({ user });
   } catch (error) {
-    return res.status(500).json({ message: "Internal server Error." });
+    next(error);
   }
 };
-export const updateMyProfile = async (req: Request, res: Response) => {
+export const updateMyProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) return res.status(401).json({ error: "Not logged in" });
     const id = req.user.id;
@@ -28,20 +36,28 @@ export const updateMyProfile = async (req: Request, res: Response) => {
     });
     res.json({ updatedUser });
   } catch (error) {
-    res.status(500).json({ error: "Failed to update the user " });
+    next(error);
   }
 };
-export const deleteMyProfile = async (req: Request, res: Response) => {
+export const deleteMyProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) return res.status(401).json({ error: "Not logged in" });
     const id = req.user.id;
     await prisma.user.update({ where: { id: id }, data: { isDeleted: true } });
     res.status(200).json({ message: "User deleted successfully!.. " });
   } catch (error) {
-    res.status(500).json({ error: "Failed to Delete the user..." });
+    next(error);
   }
 };
-export const addShippingAddress = async (req: Request, res: Response) => {
+export const addShippingAddress = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user)
       return res.status(404).json({ message: "No User Found ..Login" });
@@ -79,6 +95,38 @@ export const addShippingAddress = async (req: Request, res: Response) => {
       .status(201)
       .json({ message: "Address added successfully:- ", newAddress });
   } catch (error) {
-    res.status(500).json({ error: "Failed to add address" });
+    next(error);
+  }
+};
+export const viewAddresses = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) return res.status(400).json({ message: "Login.." });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const addresses = await prisma.userAddress.findMany({
+      where: { userId: req.user.id },
+      orderBy: { id: "asc" },
+      skip,
+      take: limit,
+    });
+    const total = await prisma.userAddress.count();
+
+    if (total <= 0)
+      return res.status(404).json({ message: "No Address found .." });
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(total / limit),
+      totaltems: total,
+      addresses,
+    });
+  } catch (error) {
+    next(error);
   }
 };

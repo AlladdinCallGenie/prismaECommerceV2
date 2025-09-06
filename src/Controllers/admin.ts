@@ -1,19 +1,40 @@
-import { Request, Response,NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import prisma from "../Config/config";
 import { hashPassword } from "../Utils/utilities";
 
 // ADMIN USERS
-export const allUsers = async (req: Request, res: Response, next:NextFunction) => {
+export const allUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const users = await prisma.user.findMany({});
-    if (!users || users.length === 0)
-      return res.status(404).json({ message: "No Users Found " });
-    return res.status(200).json({ "Users:- ": users });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const users = await prisma.user.findMany({
+      orderBy: { id: "asc" },
+      skip,
+      take: limit,
+    });
+    const total = await prisma.userAddress.count();
+    if (total <= 0) return res.status(404).json({ message: "No Users Found " });
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalitems: total,
+      users,
+    });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
-export const getById = async (req: Request, res: Response) => {
+export const getById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({ where: { id: Number(id) } });
@@ -21,10 +42,14 @@ export const getById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User does not exists.." });
     return res.status(200).json({ user: user });
   } catch (error) {
-    return res.status(500).json({ error: "Failed to find User with ID .." });
+    next(error);
   }
 };
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const { email, password, username, firstName, lastName, role } = req.body;
@@ -45,10 +70,14 @@ export const updateUser = async (req: Request, res: Response) => {
     });
     return res.status(200).json({ message: "Updated User:- ", updatedUser });
   } catch (error) {
-    return res.status(500).json({ error: "Failed to update User .." });
+    next(error);
   }
 };
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({ where: { id: Number(id) } });
@@ -60,11 +89,61 @@ export const deleteUser = async (req: Request, res: Response) => {
     });
     return res.status(200).json({ message: "User deleted successfully .. " });
   } catch (error) {
-    return res.status(500).json({ error: "Cannot delete user" });
+    next(error);
+  }
+};
+export const deactivateUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(id) },
+    });
+    if (!user)
+      return res.status(404).json({ message: "User not found with given Id" });
+    await prisma.user.update({
+      where: { id: parseInt(id) },
+      data: {
+        isActive: false,
+      },
+    });
+    return res.status(200).json({ message: "user Deactivated successfully.." });
+  } catch (error) {
+    next(error);
+  }
+};
+export const activateUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(id) },
+    });
+    if (!user)
+      return res.status(404).json({ message: "User not found with given Id" });
+    await prisma.user.update({
+      where: { id: parseInt(id) },
+      data: {
+        isActive: true,
+      },
+    });
+    return res.status(200).json({ message: "user Deactivated successfully.." });
+  } catch (error) {
+    next(error);
   }
 };
 // ADMIN CATEGORY
-export const createCategory = async (req: Request, res: Response) => {
+export const createCategory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { name } = req.body;
     const category = await prisma.category.findUnique({ where: { name } });
@@ -75,10 +154,14 @@ export const createCategory = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "Category created successfully....", newCategory });
   } catch (error) {
-    return res.status(500).json({ error: "Failed to create Category .." });
+    next(error);
   }
 };
-export const deleteCategory = async (req: Request, res: Response) => {
+export const deleteCategory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const category = await prisma.user.findUnique({
@@ -91,24 +174,44 @@ export const deleteCategory = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "Category deleted successfully..." });
   } catch (error) {
-    return res.status(500).json({ error: "cant delete category..." });
+    next(error);
   }
 };
-export const allcategories = async (req: Request, res: Response) => {
+export const allcategories = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
     const categories = await prisma.category.findMany({
       orderBy: { id: "asc" },
+      skip,
+      take: limit,
     });
+    const total = await prisma.category.count();
 
-    if (!categories || categories.length === 0)
+    if (total <= 0)
       return res.status(404).json({ message: "No categories Found.." });
 
-    return res.status(200).json({ Categories: categories });
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      categories,
+    });
   } catch (error) {
-    return res.status(500).json({ error: "cant show categories..." });
+    next(error);
   }
 };
-export const getCategoryById = async (req: Request, res: Response) => {
+export const getCategoryById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const category = await prisma.category.findUnique({
@@ -118,7 +221,31 @@ export const getCategoryById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "No category found with id.." });
     return res.status(200).json({ category });
   } catch (error) {
-    res.status(500).json({ error: "Failed to get the Category by ID..." });
+    next(error);
+  }
+};
+export const updateCategory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    const category = await prisma.category.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!category)
+      return res.status(404).json({ message: "No category found with id.." });
+    await prisma.category.update({
+      where: { id: parseInt(id) },
+      data: { name: name },
+    });
+    return res
+      .status(200)
+      .json({ message: "Category updated successfully..." });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -133,7 +260,10 @@ export const addProduct = async (req: Request, res: Response) => {
       stock,
       discount,
     } = req.body;
-
+    const uploadedFile = req.file;
+    if (!uploadedFile) {
+      return res.status(400).json({ error: "No file uploaded." });
+    }
     const isProduct = await prisma.product.findUnique({
       where: { productName: productName },
     }); //, validate(ProductSchema)
@@ -158,7 +288,9 @@ export const addProduct = async (req: Request, res: Response) => {
         image: imageUrl || "",
       },
     });
-    return res.status(200).json({ message: "Product added successfully .. " });
+    return res
+      .status(200)
+      .json({ message: "Product added successfully .. ", product });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "cant add product.. " });
@@ -174,24 +306,32 @@ export const updateProduct = async (req: Request, res: Response) => {
       description,
       stock,
       discount,
-      image,
     } = req.body;
-
+    const uploadedFile = req.file;
+    if (!uploadedFile) {
+      return res.status(400).json({ error: "No file uploaded." });
+    }
     const product = await prisma.product.findUnique({
       where: { id: Number(id) },
     });
     if (!product)
       return res.status(404).json({ message: "product not found with ID" });
+    let imageUrl: string | null = null;
+    if (req.file) {
+      imageUrl = `/public/temp${Date.now()}-${req.file.originalname}`;
+      console.log(req.file);
+      console.log(req.body);
+    }
     const updatedProduct = await prisma.product.update({
       where: { id: Number(id) },
       data: {
-        categoryId,
+        categoryId: parseInt(categoryId),
         productName,
-        productPrice,
+        productPrice: parseFloat(productPrice),
         description,
-        stock,
-        discount,
-        image,
+        stock: parseInt(stock),
+        discount: parseFloat(discount),
+        image: imageUrl || "",
       },
     });
     return res
@@ -259,14 +399,37 @@ export const activateProduct = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "cannot delete product.." });
   }
 };
-export const allProducts = async (req: Request, res: Response) => {
+export const allProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const products = await prisma.product.findMany({});
-    if (!products || products.length === 0)
-      return res.status(404).json({ message: "No products ..." });
-    return res.status(200).json({ message: "Products:- ", products });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const products = await prisma.product.findMany({
+      orderBy: { id: "asc" },
+      skip,
+      take: limit,
+    });
+
+    const total = await prisma.product.count();
+    if (total <= 0)
+      return res.status(404).json({ message: "No categories Found.." });
+
+    if (total <= 0)
+      return res.status(404).json({ message: "No products Found..." });
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      products,
+    });
   } catch (error) {
-    return res.status(500).json({ error: "cant find products.." });
+    next(error);
   }
 };
 
@@ -298,6 +461,7 @@ export const addCoupon = async (req: Request, res: Response) => {
     });
     return res.status(201).json({ message: "Coupon created successfully.." });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ error: "Cant add Coupon for somw reason.." });
   }
 };
@@ -376,28 +540,65 @@ export const activateCoupon = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Cannot activate coupon" });
   }
 };
-export const allCoupon = async (req: Request, res: Response) => {
+export const allCoupon = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const allCoupons = await prisma.coupon.findMany();
-    if (!allCoupons || allCoupons.length === 0)
-      return res.status(404).json({ message: "No coupons here" });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const allCoupons = await prisma.coupon.findMany({
+      select: { code: true, description: true, isActive: true },
+      orderBy: { id: "asc" },
+      skip,
+      take: limit,
+    });
+    const total = await prisma.coupon.count();
+
+    if (total <= 0) return res.status(404).json({ message: "No coupons here" });
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      allCoupons,
+    });
   } catch (error) {
-    return res.status(500).json({ error: "Cant show all coupons now." });
+    next(error);
   }
 };
 
 //ADMIN ORDER
-export const allOrders = async (req: Request, res: Response) => {
+export const allOrders = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
     const orders = await prisma.order.findMany({
       orderBy: { orderDate: "asc" },
       include: { orderItems: true },
+      skip,
+      take: limit,
     });
-    if (!orders || orders.length === 0)
+    const total = await prisma.order.count();
+    if (total <= 0)
       return res.status(404).json({ message: "No Orders tille now!" });
-    return res.status(200).json({ Orders: orders });
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      orders,
+    });
   } catch (error) {
-    return res.status(500).json({ error: "Cant show all the orders" });
+    next(error);
   }
 };
 export const updateStatus = async (req: Request, res: Response) => {

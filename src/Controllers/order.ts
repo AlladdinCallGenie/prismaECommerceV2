@@ -1,11 +1,15 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import prisma from "../Config/config";
 
-export const placeOrder = async (req: Request, res: Response) => {
+export const placeOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Login ...." });
     const userId = req.user.id;
-    const { address_id, couponCode } = req.body;
+    const { addressId, couponCode } = req.body;
 
     const cart = await prisma.cart.findUnique({
       where: { userId },
@@ -15,7 +19,7 @@ export const placeOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Cart is Empty " });
 
     const address = await prisma.userAddress.findFirst({
-      where: { id: address_id, userId },
+      where: { id: addressId, userId },
     });
     if (!address)
       return res.status(400).json({ error: "Invalid or No shipping address" });
@@ -90,10 +94,14 @@ export const placeOrder = async (req: Request, res: Response) => {
       .status(201)
       .json({ message: "Order placed successfully ", order });
   } catch (error) {
-    return res.status(500).json({ message: "Failed to place order " });
+    next(error);
   }
 };
-export const cancelOrder = async (req: Request, res: Response) => {
+export const cancelOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) return res.status(404).json({ message: "Login First" });
     const { id } = req.params;
@@ -110,12 +118,19 @@ export const cancelOrder = async (req: Request, res: Response) => {
       order: updateOrder,
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to cancel order" });
+    next(error);
   }
 };
-export const orderHistory = async (req: Request, res: Response) => {
+export const orderHistory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Login" });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
     const userId = req.user.id;
     const history = await prisma.order.findMany({
       where: { userId: userId },
@@ -123,14 +138,31 @@ export const orderHistory = async (req: Request, res: Response) => {
         orderItems: true,
         address: true,
       },
+      skip,
+      take: limit,
     });
-    if (!history) return res.status(404).json({ message: "No history found " });
-    return res.status(200).json({ message: "User History:- ", history });
+    const total = await prisma.order.count();
+    if (total <= 0)
+      return res.status(404).json({ message: "No Address found .." });
+
+    if (total <= 0)
+      return res.status(404).json({ message: "No history found " });
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      history,
+    });
   } catch (error) {
-    res.status(500).json({ error: "Failed to Show order history" });
+    next(error);
   }
 };
-export const checkStatus = async (req: Request, res: Response) => {
+export const checkStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Login" });
     const { id } = req.params;
@@ -141,6 +173,21 @@ export const checkStatus = async (req: Request, res: Response) => {
     const status = `${order.status} ON ${order.orderDate}`;
     return res.status(200).json({ status });
   } catch (error) {
-    return res.status(500).json({ error: "Cant Show you order status" });
+    next(error);
+  }
+};
+
+export const repeateOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: "Login ..." });
+    const userId = req.user.id;
+    const { addressId, couponCode } = req.body;
+    
+  } catch (error) {
+    next(error);
   }
 };

@@ -2,15 +2,17 @@ import {
     updateMyProfile, 
     getMyProfile, 
     deleteMyProfile, 
-    addShippingAddress 
+    addShippingAddress,
+    viewAddresses 
 } from "../Controllers/user";
 import { Router } from "express";
 import { isAuthenticated } from "../Middlewares/auth";
-const router = Router()
+const router = Router();
 
-router.get('/profile', isAuthenticated, getMyProfile)
-router.put('/update', isAuthenticated, updateMyProfile)
-router.delete('/delete', isAuthenticated, deleteMyProfile)
-router.post('/address', isAuthenticated, addShippingAddress)
+router.get('/profile', isAuthenticated, getMyProfile);
+router.put('/profile', isAuthenticated, updateMyProfile);
+router.delete('/profile', isAuthenticated, deleteMyProfile);
+router.post('/address', isAuthenticated, addShippingAddress);
+router.get("/address", isAuthenticated, viewAddresses);
 
 export default router;

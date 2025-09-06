@@ -67,10 +67,11 @@ export const addToCart = async (req: Request, res: Response) => {
 };
 export const removeFromCart = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    await prisma.cartItems.delete({ where: { id: parseInt(id) } });
+    const { cartItemId } = req.params;
+    await prisma.cartItems.delete({ where: { id: parseInt(cartItemId) } });
     return res.status(200).json({ message: "Cart Item deleted successfully" });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ error: "Failed to delete Item from cart " });
   }
 };
