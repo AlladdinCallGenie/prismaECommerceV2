@@ -238,3 +238,16 @@ readStream.on("data", (chunk) => {
 
 DiskStorage → Saves files to local server (not scalable for production).
 MemoryStorage → Keeps file in memory buffer, then you upload it to cloud storage (S3, GCS, etc.).
+
+
+
+    // const uploadedFile = req.file;
+    // if (!uploadedFile) {
+    //   return res.status(400).json({ error: "No file uploaded." });
+    // }
+    let imageUrl: string | null = null;
+    // if (req.file) {
+    //   imageUrl = `/public/temp${Date.now()}-${req.file.originalname}`;
+    //   console.log(req.file);
+    //   console.log(req.body);
+    // }

@@ -178,8 +178,8 @@ export const resetPassword = async (
         password: hashedPassword,
         accessToken: accessToken,
         refreshToken: refreshToken,
-        otp: "",
-        otpExpiry: "",
+        otp: null,
+        otpExpiry: null,
       },
     });
     return res.status(200).json({ message: "Password reset successfully..." });

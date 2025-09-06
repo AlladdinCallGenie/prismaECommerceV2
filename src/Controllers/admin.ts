@@ -249,97 +249,105 @@ export const updateCategory = async (
   }
 };
 
+type SkuInput = {
+  description: string;
+  attributes: Record<string, any>;
+  skuCode: string;
+  productPrice: number;
+  discount?: number;
+  stock: number;
+  image: string;
+};
+type createProduct = {
+  categoryId: string;
+  productName: string;
+  skus: SkuInput[];
+};
+
 // ADMIN PRODUCT
-export const addProduct = async (req: Request, res: Response) => {
+export const addProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const {
-      categoryId,
-      productName,
-      productPrice,
-      description,
-      stock,
-      discount,
-    } = req.body;
-    const uploadedFile = req.file;
-    if (!uploadedFile) {
-      return res.status(400).json({ error: "No file uploaded." });
+    const { categoryId, productName, skus } = req.body as createProduct;
+    if (!productName || !categoryId || !Array.isArray(skus)) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
+    // const uploadedFile = req.file;
+    // if (!uploadedFile) throw new Error("No file uploaded");
+
     const isProduct = await prisma.product.findUnique({
       where: { productName: productName },
-    }); //, validate(ProductSchema)
-    if (isProduct)
-      return res
-        .status(400)
-        .json({ message: "Duplicate products not allowed .." });
+    });
+    if (isProduct) throw new Error("Duplicate products not allowed");
+
     let imageUrl: string | null = null;
-    if (req.file) {
-      imageUrl = `/public/temp${Date.now()}-${req.file.originalname}`;
-      console.log(req.file);
-      console.log(req.body);
-    }
+    // if (req.file) {
+    //   imageUrl = `/public/temp${Date.now()}-${req.file.originalname}`;
+    //   console.log(req.file);
+    //   console.log(req.body);
+    // }
+
     const product = await prisma.product.create({
       data: {
         categoryId: parseInt(categoryId),
         productName,
-        productPrice: parseFloat(productPrice),
-        description,
-        stock: parseInt(stock),
-        discount: parseFloat(discount),
-        image: imageUrl || "",
+        sku: {
+          create: skus.map((sku) => ({
+            description: sku.description,
+            attributes: sku.attributes,
+            skuCode: sku.skuCode,
+            productPrice: sku.productPrice,
+            discount: sku.discount,
+            stock: sku.stock,
+            image: imageUrl ?? "",
+          })),
+        },
       },
+      include: { sku: true },
     });
     return res
       .status(200)
       .json({ message: "Product added successfully .. ", product });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: "cant add product.. " });
+    next(error);
   }
 };
-export const updateProduct = async (req: Request, res: Response) => {
+export const updateProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
-    const {
-      categoryId,
-      productName,
-      productPrice,
-      description,
-      stock,
-      discount,
-    } = req.body;
-    const uploadedFile = req.file;
-    if (!uploadedFile) {
-      return res.status(400).json({ error: "No file uploaded." });
-    }
+    const { categoryId, productName } = req.body;
+
     const product = await prisma.product.findUnique({
       where: { id: Number(id) },
     });
     if (!product)
       return res.status(404).json({ message: "product not found with ID" });
-    let imageUrl: string | null = null;
-    if (req.file) {
-      imageUrl = `/public/temp${Date.now()}-${req.file.originalname}`;
-      console.log(req.file);
-      console.log(req.body);
-    }
+
     const updatedProduct = await prisma.product.update({
-      where: { id: Number(id) },
-      data: {
-        categoryId: parseInt(categoryId),
-        productName,
-        productPrice: parseFloat(productPrice),
-        description,
-        stock: parseInt(stock),
-        discount: parseFloat(discount),
-        image: imageUrl || "",
-      },
+      where: { id: parseInt(id) },
+      data: { categoryId: parseInt(categoryId), productName },
     });
+
     return res
       .status(200)
       .json({ message: "product updated successfully..", updatedProduct });
-  } catch (error) {}
+  } catch (error) {
+    next(error);
+  }
 };
-export const deleteProduct = async (req: Request, res: Response) => {
+export const deleteProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const isproduct = await prisma.product.findUnique({
@@ -356,10 +364,14 @@ export const deleteProduct = async (req: Request, res: Response) => {
     });
     return res.status(200).json({ message: "product deleted successfully..." });
   } catch (error) {
-    return res.status(500).json({ error: "cannot delete product.." });
+    next(error);
   }
 };
-export const deActiveProduct = async (req: Request, res: Response) => {
+export const deActiveProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const isproduct = await prisma.product.findUnique({
@@ -375,10 +387,14 @@ export const deActiveProduct = async (req: Request, res: Response) => {
     });
     return res.status(200).json({ message: "product diabled successfully..." });
   } catch (error) {
-    return res.status(500).json({ error: "cannot delete product.." });
+    next(error);
   }
 };
-export const activateProduct = async (req: Request, res: Response) => {
+export const activateProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const isproduct = await prisma.product.findUnique({
@@ -396,7 +412,7 @@ export const activateProduct = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "product activated successfully..." });
   } catch (error) {
-    return res.status(500).json({ error: "cannot delete product.." });
+    next(error);
   }
 };
 export const allProducts = async (
@@ -410,6 +426,7 @@ export const allProducts = async (
     const skip = (page - 1) * limit;
 
     const products = await prisma.product.findMany({
+      select: { id: true, productName: true, categoryId: true, sku: true },
       orderBy: { id: "asc" },
       skip,
       take: limit,
@@ -432,9 +449,101 @@ export const allProducts = async (
     next(error);
   }
 };
+export const addSku = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { productId } = req.params;
+    const { description, attributes, skuCode, productPrice, discount, stock } =
+      req.body;
+    const product = await prisma.product.findUnique({
+      where: { id: parseInt(productId) },
+    });
+    if (!product) throw new Error("No product found for the sku!");
+    const isSkuAvailable = await prisma.sku.findFirst({
+      where: { skuCode: skuCode, productId: parseInt(productId) },
+    });
+    if (isSkuAvailable) throw new Error("SKU code already present");
+
+    let imageUrl: string | null = null;
+
+    const newSku = await prisma.sku.create({
+      data: {
+        productId: parseInt(productId),
+        description,
+        attributes,
+        skuCode,
+        productPrice,
+        discount,
+        stock,
+        image: imageUrl || "",
+      },
+    });
+    return res
+      .status(200)
+      .json({ message: "SKU created successfully..", newSku });
+  } catch (error) {
+    next(error);
+  }
+};
+export const updateSku = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { description, attributes, skuCode, productPrice, discount, stock } =
+      req.body;
+
+    const sku = await prisma.sku.findUnique({
+      where: { id: parseInt(id) },
+    });
+    if (!sku)
+      return res.status(404).json({ message: "product not found with ID" });
+
+    const updatedSku = await prisma.sku.update({
+      where: { id: parseInt(id) },
+      data: {
+        description: description,
+        attributes: attributes,
+        skuCode: skuCode,
+        productPrice: productPrice,
+        discount: discount,
+        stock: stock,
+      },
+    });
+
+    return res
+      .status(200)
+      .json({ message: "Sku updated successfully..", updatedSku });
+  } catch (error) {
+    next(error);
+  }
+};
+export const skuById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const sku = await prisma.sku.findUnique({ where: { id: parseInt(id) } });
+    if (!sku) throw new Error("No SKU found with ID");
+    return res.status(200).json({ sku });
+  } catch (error) {
+    next(error);
+  }
+};
 
 //ADMIN COUPON
-export const addCoupon = async (req: Request, res: Response) => {
+export const addCoupon = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const {
       code,
@@ -462,10 +571,14 @@ export const addCoupon = async (req: Request, res: Response) => {
     return res.status(201).json({ message: "Coupon created successfully.." });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: "Cant add Coupon for somw reason.." });
+    next(error);
   }
 };
-export const updateCoupon = async (req: Request, res: Response) => {
+export const updateCoupon = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const {
@@ -498,12 +611,14 @@ export const updateCoupon = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "Updated Coupon:- ", updatedCoupon });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Cannot update coupon due to some reason.." });
+    next(error);
   }
 };
-export const deleteCoupon = async (req: Request, res: Response) => {
+export const deleteCoupon = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const coupon = await prisma.coupon.findUnique({
@@ -516,10 +631,14 @@ export const deleteCoupon = async (req: Request, res: Response) => {
     });
     return res.status(200).json({ mesasge: "coupon deleted successfully.." });
   } catch (error) {
-    return res.status(500).json({ error: "Cant delete coupon .." });
+    next(error);
   }
 };
-export const activateCoupon = async (req: Request, res: Response) => {
+export const activateCoupon = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const coupon = await prisma.coupon.findUnique({
@@ -537,7 +656,7 @@ export const activateCoupon = async (req: Request, res: Response) => {
       message: "Coupon activated successfully",
     });
   } catch (error) {
-    return res.status(500).json({ message: "Cannot activate coupon" });
+    next(error);
   }
 };
 export const allCoupon = async (
@@ -601,7 +720,11 @@ export const allOrders = async (
     next(error);
   }
 };
-export const updateStatus = async (req: Request, res: Response) => {
+export const updateStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -621,6 +744,31 @@ export const updateStatus = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "order marked as " + status, order: updatedOrder });
   } catch (error) {
-    res.status(500).json({ error: "Failed to update the order" });
+    next(error);
+  }
+};
+
+//For testing purpose only
+export const deleteOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(id) },
+    });
+    if (!order) throw new Error("No order found ");
+
+    // const result = await prisma.cartItems.deleteMany({ where: { cartId: { gte: 0 } } });
+    const result = await prisma.order.delete({
+      where: { id: parseInt(id) },
+    });
+    return res
+      .status(200)
+      .json({ message: "Done Deleting the order ", result });
+  } catch (error) {
+    next(error);
   }
 };

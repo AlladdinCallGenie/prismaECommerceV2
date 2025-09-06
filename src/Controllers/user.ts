@@ -130,3 +130,23 @@ export const viewAddresses = async (
     next(error);
   }
 };
+export const deleteAddress = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) return res.status(400).json({ message: "Login.." });
+    const { id } = req.params;
+    const address = await prisma.user.findUnique({
+      where: { id: parseInt(id) },
+    });
+    if (!address) return res.status(404).json({ message: "No address found " });
+    await prisma.userAddress.delete({
+      where: { id: parseInt(id), userId: req.user.id },
+    });
+    return res.status(200).json({ message: "Address deleted successfully " });
+  } catch (error) {
+    next(error);
+  }
+};
