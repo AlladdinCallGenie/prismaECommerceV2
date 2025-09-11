@@ -251,3 +251,72 @@ MemoryStorage → Keeps file in memory buffer, then you upload it to cloud stora
     //   console.log(req.file);
     //   console.log(req.body);
     // }
+
+
+//product 
+
+{
+    "categoryId": 1,
+    "productName": "iPhone 12 Pro",
+    "description": "Latest Apple iPhone with A16 Bionic chip",
+    "brand": "Apple",
+    "skus":[
+      {
+         "productId": 1,
+         "attributes": { "storage": "256GB", "color": "Silver" },
+         "skuCode": "IPH12PRO-128-SLR",
+         "productPrice": 999.99,
+         "discount": 50.00,
+         "stock": 80,
+         "image": "https://example.com/images/iphone14-black-128.jpg"
+      },
+      {
+         "productId": 1,
+         "attributes": { "storage": "128GB", "color": "Space" },
+         "skuCode": "IPH12PRO-128-SPC",
+         "productPrice": 999.99,
+         "discount": 50.00,
+         "stock": 170,
+         "image": "https://example.com/images/iphone14-black-128.jpg"
+      },
+      {
+         "productId": 1,
+         "attributes": { "storage": "128GB", "color": "YELLOW" },
+         "skuCode": "IPH12PRO-128-YLW",
+         "productPrice": 999.99,
+         "discount": 50.00,
+         "stock": 120,
+         "image": "https://example.com/images/iphone14-black-128.jpg"
+      }
+
+    ]
+
+}
+
+
+//           ACTIVATE/DEACTIVATE
+        await prisma.sku.update({
+      where: { id: parseInt(id) },
+      data: {
+        isActive: JSON.parse(status),
+      },
+    });
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

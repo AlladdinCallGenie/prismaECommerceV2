@@ -61,6 +61,8 @@ model Product {
   id          Int       @id @default(autoincrement())
   categoryId  Int
   productName String    @unique
+  description String
+  brand       String
   isActive    Boolean   @default(true)
   isDeleted   Boolean   @default(false)
   isDeletedAt DateTime?
@@ -71,7 +73,6 @@ model Product {
 model Sku {
   id           Int          @id @default(autoincrement())
   productId    Int
-  description  String
   attributes   Json
   skuCode      String       @unique
   productPrice Float
@@ -97,13 +98,13 @@ model Cart {
 }
 
 model CartItems {
-  id               Int   @id @default(autoincrement())
-  cartId           Int
-  productVariantId Int
-  quantity         Int
-  price            Float
-  cart             Cart  @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  sku              Sku   @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  id       Int   @id @default(autoincrement())
+  cartId   Int
+  skuId    Int
+  quantity Int
+  price    Float
+  cart     Cart  @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  sku      Sku   @relation(fields: [skuId], references: [id], onDelete: Cascade)
 }
 
 model Order {
@@ -123,13 +124,13 @@ model Order {
 }
 
 model OrderItems {
-  id               Int   @id @default(autoincrement())
-  orderId          Int
-  productVariantId Int
-  quantity         Int
-  price            Float
-  order            Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  sku              Sku   @relation(fields: [productVariantId], references: [id])
+  id       Int   @id @default(autoincrement())
+  orderId  Int
+  skuId    Int
+  quantity Int
+  price    Float
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sku      Sku   @relation(fields: [skuId], references: [id])
 }
 
 model Coupon {

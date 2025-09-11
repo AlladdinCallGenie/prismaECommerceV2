@@ -9,7 +9,7 @@ export const getMyProfile = async (
 ) => {
   try {
     const user = req.user;
-    if (!user) return res.status(401).json({ error: "Not loggedIn" });
+    if (!user) throw new Error("Not LoggedIn..");
     res.json({ user });
   } catch (error) {
     next(error);
@@ -70,8 +70,8 @@ export const addShippingAddress = async (
       state,
       country,
       isShippingAddress,
+      addressType,
     } = req.body;
-
     if (isShippingAddress) {
       await prisma.userAddress.updateMany({
         where: { userId: userId, isShippingAddress: true },
@@ -89,6 +89,7 @@ export const addShippingAddress = async (
         state,
         country,
         isShippingAddress,
+        addressType,
       },
     });
     return res
@@ -115,10 +116,11 @@ export const viewAddresses = async (
       skip,
       take: limit,
     });
-    const total = await prisma.userAddress.count();
+    const total = await prisma.userAddress.count({
+      where: { userId: req.user.id },
+    });
 
-    if (total <= 0)
-      return res.status(404).json({ message: "No Address found .." });
+    if (total <= 0) throw new Error("No address found");
 
     return res.status(200).json({
       page,
@@ -138,10 +140,10 @@ export const deleteAddress = async (
   try {
     if (!req.user) return res.status(400).json({ message: "Login.." });
     const { id } = req.params;
-    const address = await prisma.user.findUnique({
+    const address = await prisma.userAddress.findUnique({
       where: { id: parseInt(id) },
     });
-    if (!address) return res.status(404).json({ message: "No address found " });
+    if (!address) throw new Error("No Address found ");
     await prisma.userAddress.delete({
       where: { id: parseInt(id), userId: req.user.id },
     });

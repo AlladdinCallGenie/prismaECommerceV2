@@ -12,13 +12,36 @@ export const getAllProducts = async (
     const skip = (page - 1) * limit;
 
     const products = await prisma.product.findMany({
+      select: {
+        id: true,
+        productName: true,
+        categoryId: true,
+        description: true,
+        brand: true,
+        sku: {
+          select: {
+            id: true,
+            productId: true,
+            attributes: true,
+            skuCode: true,
+            productPrice: true,
+            discount: true,
+            image: true,
+          },
+        },
+      },
       where: { isActive: true },
+      orderBy: { id: "asc" },
       skip,
       take: limit,
     });
+
     const total = await prisma.product.count();
 
-    res.status(200).json({
+    if (total <= 0)
+      return res.status(404).json({ message: "No products Found..." });
+
+    return res.status(200).json({
       page,
       totalPages: Math.ceil(total / limit),
       totalItems: total,
@@ -36,10 +59,28 @@ export const getProductById = async (
   try {
     const { id } = req.params;
     const product = await prisma.product.findUnique({
+      select: {
+        id: true,
+        productName: true,
+        categoryId: true,
+        description: true,
+        brand: true,
+        sku: {
+          select: {
+            id: true,
+            productId: true,
+            attributes: true,
+            skuCode: true,
+            productPrice: true,
+            discount: true,
+            image: true,
+          },
+        },
+      },
       where: { id: parseInt(id) },
     });
-    if (!product) return res.status(404).json({ message: "Product not found" });
-    res.status(200).json({ product });
+    if (!product) throw new Error("No product found with ID");
+    return res.status(200).json({ product });
   } catch (error) {
     next(error);
   }
@@ -60,6 +101,24 @@ export const getByCategory = async (
     }
 
     const products = await prisma.product.findMany({
+      select: {
+        id: true,
+        productName: true,
+        categoryId: true,
+        description: true,
+        brand: true,
+        sku: {
+          select: {
+            id: true,
+            productId: true,
+            attributes: true,
+            skuCode: true,
+            productPrice: true,
+            discount: true,
+            image: true,
+          },
+        },
+      },
       where: { category: { name: name, isActive: true } },
       skip,
       take: limit,
@@ -80,6 +139,31 @@ export const getByCategory = async (
       totalItems: total,
       products,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+export const skuById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const sku = await prisma.sku.findUnique({
+      select: {
+        id: true,
+        productId: true,
+        attributes: true,
+        skuCode: true,
+        productPrice: true,
+        discount: true,
+        image: true,
+      },
+      where: { id: parseInt(id) },
+    });
+    if (!sku) throw new Error("No SKU found with ID");
+    return res.status(200).json({ sku });
   } catch (error) {
     next(error);
   }

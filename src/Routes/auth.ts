@@ -12,4 +12,4 @@ router.put("/forget-password", forgetPassword);
 router.put("/reset-password", resetPassword);
 
 export default router;
-// forget password || resetpassword || changepassword
+

@@ -1,5 +1,4 @@
-import { Role } from "@prisma/client";
-import { DiscountType } from "@prisma/client";
+import { Role, AddressType, DiscountType } from "@prisma/client";
 import { z } from "zod";
 
 export const UserSchema = z.object({
@@ -19,21 +18,18 @@ export const UserSchema = z.object({
     .trim()
     .min(1, { message: "lastName must be atleast 3 characters" })
     .max(100, { message: "lastName must not be more than 100 characters" }),
-  password: z.string().trim().min(8, { message: "password must be atleast 8 characters" }),
-  role: z.enum(Role).optional(),
+  password: z
+    .string()
+    .trim()
+    .min(8, { message: "password must be atleast 8 characters" }),
 });
 
-const AddressSchema = z.object({
-  userId: z.number().int().positive(),
+export const AddressSchema = z.object({
   addressLine1: z
     .string()
     .min(10, { message: "address should not be less than 10 characters" })
     .max(255, { message: "address line 1 should not exceed 255 characters" }),
-  addressLine2: z
-    .string()
-    .min(10, { message: "address should not be less than 10 characters" })
-    .max(255, { message: "address line 2 should not exceed 255 characters" })
-    .optional(),
+  addressLine2: z.string().optional(),
   postalCode: z.number().int().positive(),
   city: z
     .string()
@@ -47,6 +43,8 @@ const AddressSchema = z.object({
     .string()
     .min(3, { message: "country name should not be less than 3 characters" })
     .max(200, { message: "contry name should have max 200 characters" }),
+  addressType: z.enum(AddressType),
+  isShippingAddress: z.boolean(),
 });
 
 export const CategorySchema = z.object({
@@ -62,14 +60,40 @@ export const ProductSchema = z.object({
     .string()
     .min(3, { message: "category name shouuld not be less than 3 characters" })
     .max(100, { message: "category length should not exceed 100 characters" }),
-  productPrice: z.number().positive(),
+  brand: z
+    .string()
+    .min(3, { message: "brand name shouuld not be less than 3 characters" })
+    .max(50, { message: "brand name shouuld not be more than 50 characters" }),
   description: z
     .string()
     .min(3, { message: "category name shouuld not be less than 3 characters" })
-    .max(100, { message: "category length should not exceed 100 characters" }),
+    .max(300, { message: "category length should not exceed 300 characters" }),
+  skus: z
+    .array(
+      z.object({
+        skuCode: z
+          .string()
+          .min(6, "skuCode should not be less than 6 characters"),
+        attributes: z.record(z.string(), z.string()),
+        productPrice: z.number().positive(),
+        discount: z.number().min(0).max(100),
+        stock: z.number().int().positive(),
+      })
+    )
+    .min(1, "At least one SKU is required"),
+});
+
+export const SkuSchema = z.object({
+  productId: z.number().int().positive(),
+  attributes: z.json(),
+  skuCode: z
+    .string()
+    .min(6, { message: "skuCode should not be less than 6 characters" })
+    .max(25, { message: "skuCode should not be less than 15 characters " }),
+  productPrice: z.number().positive(),
+  discount: z.number().positive(),
   stock: z.number().int().positive(),
-  discount: z.number().int().positive(),
-  // image: z.string(),
+  image: z.string(),
 });
 
 const CartSchema = z.object({
@@ -99,7 +123,7 @@ const OrderItemSchema = z.object({
   price: z.number().int().positive(),
 });
 
-const CouponSchema = z.object({
+export const CouponSchema = z.object({
   code: z.string().min(3, {
     message: "Coupon length should be atleast 3 characters long",
   }),
@@ -113,5 +137,5 @@ const CouponSchema = z.object({
   discountValue: z.number().positive(),
   minOrderValue: z.number().positive().optional(),
   maxDiscount: z.number().positive().optional(),
-  validTo: z.date(),
+  validTo: z.string(),
 });

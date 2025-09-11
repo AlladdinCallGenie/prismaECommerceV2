@@ -24,12 +24,12 @@ app.use(express.json());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(logger("dev"));
 
-app.use("/api/auth", authRoutes); // Tested
-app.use("/api/admin", adminRoutes); // Tested
-app.use("/api/user", userRoutes); // Tested
-app.use("/api/products", productRoutes); // Tested
-app.use("/api/cart", cartRoutes); // Tested
-app.use("/api/order", orderRoutes); // Tested
+app.use("/api/auth", authRoutes); //Done
+app.use("/api/admin", adminRoutes); //Done
+app.use("/api/user", userRoutes); //Done
+app.use("/api/products", productRoutes); //Done
+app.use("/api/cart", cartRoutes); //Done
+app.use("/api/order", orderRoutes); //Done
 
 app.use(errorHandler);
 app.listen(PORT, () => {

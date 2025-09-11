@@ -2,7 +2,7 @@ import { Router } from "express";
 import { isAuthenticated } from "../Middlewares/auth";
 import { checkRole } from "../Middlewares/role";
 import { Role } from "@prisma/client";
-import { UserSchema, CategorySchema, ProductSchema } from "../Validators/validations";
+import { UserSchema, CategorySchema, ProductSchema, SkuSchema, CouponSchema } from "../Validators/validations";
 import { validate } from "../Middlewares/validate";
 import { upload } from "../Middlewares/multer";
 import {
@@ -10,29 +10,29 @@ import {
   deleteCategory,
   allcategories,
   getCategoryById,
+  updateCategory,
   addProduct,
   updateProduct,
   addSku,
   updateSku,
-  skuById,
+  deleteSku,
+  changeSkuStatus,
+  allSkus,
   deleteProduct,
-  deActiveProduct,
-  activateProduct,
-  allProducts,
+  changeProductStatus,
   allUsers,
   getById,
   updateUser,
   deleteUser,
   addCoupon,
   updateCoupon,
-  deleteCoupon,
-  activateCoupon,
+  changeCouponStatus,
   allCoupon,
   allOrders,
   updateStatus,
-  deactivateUser,
-  activateUser,
+  changeUserStatus,
   deleteOrder,
+  getAllAdminProducts,
 } from "../Controllers/admin";
 
 const router = Router();
@@ -41,32 +41,33 @@ router.get("/users", isAuthenticated, checkRole([Role.ADMIN]), allUsers);
 router.get("/users/:id", isAuthenticated, checkRole([Role.ADMIN]), getById);
 router.put("/users/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(UserSchema), updateUser);
 router.delete("/users/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteUser);
-router.put("/users/deactivate/:id", isAuthenticated, checkRole([Role.ADMIN]), deactivateUser);
-router.put("/users/activate/:id", isAuthenticated, checkRole([Role.ADMIN]), activateUser);
+router.put("/users/status/:id", isAuthenticated, checkRole([Role.ADMIN]), changeUserStatus);
 
 // ---------->Admin Category Routes<----------
 router.get("/categories", isAuthenticated, checkRole([Role.ADMIN]), allcategories);
 router.post("/category", isAuthenticated, checkRole([Role.ADMIN]), validate(CategorySchema), createCategory);
 router.get("/category/:id", isAuthenticated, checkRole([Role.ADMIN]), getCategoryById);
 router.delete("/category/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteCategory);
+router.put("/category/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(CategorySchema), updateCategory);
 
 // ---------->Admin Product Routes<----------                       validate(ProductSchema)
-router.post("/product", isAuthenticated, checkRole([Role.ADMIN]), addProduct);
-router.put("/product/:id", isAuthenticated, checkRole([Role.ADMIN]), updateProduct);
-router.delete("/product/delete/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteProduct);
-router.put("/product/deactive/:id", isAuthenticated, checkRole([Role.ADMIN]), deActiveProduct);
-router.put("/product/active/:id", isAuthenticated, checkRole([Role.ADMIN]), activateProduct);
-router.get("/products", isAuthenticated, checkRole([Role.ADMIN]), allProducts);
-router.post("/sku/:productId", isAuthenticated, checkRole([Role.ADMIN]), addSku);
-router.get("/sku/:id", isAuthenticated, checkRole([Role.ADMIN]), skuById);
-router.put("/sku/:id", isAuthenticated, checkRole([Role.ADMIN]), updateSku);
+router.post("/product", isAuthenticated, checkRole([Role.ADMIN]), validate(ProductSchema), addProduct);
+router.put("/product/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(ProductSchema), updateProduct);
+router.delete("/product/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteProduct);
+router.put("/product/status/:id", isAuthenticated, checkRole([Role.ADMIN]), changeProductStatus);
+router.get("/products", isAuthenticated, checkRole([Role.ADMIN]), getAllAdminProducts);
+
+router.post("/sku/:productId", isAuthenticated, checkRole([Role.ADMIN]), validate(SkuSchema), addSku);
+router.put("/sku/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(SkuSchema), updateSku);
+router.delete("/sku/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteSku);
+router.put("/sku/status/:id", isAuthenticated, checkRole([Role.ADMIN]), changeSkuStatus);
+router.get("/sku/all", isAuthenticated, checkRole([Role.ADMIN]), allSkus);
 
 // ---------->Admin Coupon Routes<----------
 router.get("/coupons", isAuthenticated, checkRole([Role.ADMIN]), allCoupon);
-router.post("/coupon", isAuthenticated, checkRole([Role.ADMIN]), addCoupon);
-router.put("/coupon/:id", isAuthenticated, checkRole([Role.ADMIN]), updateCoupon);
-router.delete("/coupon/delete/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteCoupon);
-router.put("/coupon/activate/:id", isAuthenticated, checkRole([Role.ADMIN]), activateCoupon);
+router.post("/coupon", isAuthenticated, checkRole([Role.ADMIN]), validate(CouponSchema), addCoupon);
+router.put("/coupon/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(CouponSchema), updateCoupon);
+router.delete("/coupon/:id", isAuthenticated, checkRole([Role.ADMIN]), changeCouponStatus);
 
 // ---------->Admin Order Routes<----------
 router.get("/orders/all", isAuthenticated, checkRole([Role.ADMIN]), allOrders);
