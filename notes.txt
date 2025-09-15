@@ -439,12 +439,86 @@ export const placeOrder = async (
 };
     
     
+// sms   
+const accountSid = 'ACb0bb43104c2c21daebc0b0cedf226411';
+const authToken = 'd2048fb3a27bd21e1509f92c6b70fd51';
+const client = require('twilio')(accountSid, authToken);
+
+client.verify.v2.services("VAe84d4d13ca3541f1639ecd0ccac2cf6c")
+      .verifications
+      .create({to: '+919594331924', channel: 'sms'})
+      .then(verification => console.log(verification.sid));
     
     
     
     
+import { Request, Response, NextFunction } from 'express';
+import { prisma } from './prismaClient';  // Make sure to import your Prisma client
+import twilio from 'twilio';
+
+const accountSid = 'yourAccountSid';  // Your Twilio Account SID
+const authToken = 'yourAuthToken';   // Your Twilio Auth Token
+const client = twilio(accountSid, authToken);
+
+// Twilio Verify Service SID (you must have this configured in your Twilio dashboard)
+const verifyServiceSid = 'yourTwilioVerifyServiceSid';
+
+export const verifyOtpSms = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get the email or phone number of the user from the request (assume the user is logged in)
+    const { email } = req.body;  // Or if you're using phone, { phone }
+
+    // Retrieve the user from the database
+    const user = await prisma.user.findUnique({
+      where: {
+        email: email,  // Or phone number if you're using phone number directly
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.phone) {
+      return res.status(400).json({ message: 'User phone number is missing' });
+    }
+
+    const phoneNumber = user.phone;
+
+    // Send OTP to user's phone using Twilio's Verify API
+    const verification = await client.verify.v2.services(verifyServiceSid)
+      .verifications
+      .create({
+        to: phoneNumber,  // Phone number from the database
+        channel: 'sms',   // You can use 'sms' or 'email' based on the channel you prefer
+      });
+
+    // Check if verification was successful
+    if (verification.status === 'pending') {
+      return res.status(200).json({ message: 'OTP sent successfully' });
+    }
+
+    return res.status(500).json({ message: 'Failed to send OTP' });
     
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+    next(error);  // Forward the error to your error handling middleware
+  }
+};
+   
     
-    
-    
-    
+ *               skus:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     attributes:
+ *                       type: object
+ *                     skuCode:
+ *                       type: string
+ *                     productPrice:
+ *                       type: number
+ *                     discount:
+ *                       type: number
+ *                     stock:
+ *                       type: integer   

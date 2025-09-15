@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../Config/config";
 import { hashPassword } from "../Utils/utilities";
+import { file } from "zod";
 
 // ADMIN USERS
 export const allUsers = async (
@@ -256,24 +257,15 @@ export const addProduct = async (
   next: NextFunction
 ) => {
   try {
-    const { categoryId, productName, description, brand, skus } = req.body;
-    if (!Array.isArray(skus)) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-    // const uploadedFile = req.file;
-    // if (!uploadedFile) throw new Error("No file uploaded");
+    const { categoryId, productName, description, brand, } = req.body;
+    // if (!Array.isArray(skus)) {
+    //   return res.status(400).json({ error: "Missing required fields" });
+    // }
 
     const isProduct = await prisma.product.findUnique({
       where: { productName: productName },
     });
     if (isProduct) throw new Error("Duplicate products not allowed");
-
-    let imageUrl: string | null = null;
-    // if (req.file) {
-    //   imageUrl = `/public/temp${Date.now()}-${req.file.originalname}`;
-    //   console.log(req.file);
-    //   console.log(req.body);
-    // }
 
     const product = await prisma.product.create({
       data: {
@@ -281,16 +273,16 @@ export const addProduct = async (
         productName,
         description,
         brand,
-        sku: {
-          create: skus.map((sku) => ({
-            attributes: sku.attributes,
-            skuCode: sku.skuCode,
-            productPrice: sku.productPrice,
-            discount: sku.discount,
-            stock: sku.stock,
-            image: imageUrl ?? "",
-          })),
-        },
+        // sku: {
+        //   create: skus.map((sku) => ({
+        //     attributes: sku.attributes,
+        //     skuCode: sku.skuCode,
+        //     productPrice: sku.productPrice,
+        //     discount: sku.discount,
+        //     stock: sku.stock,
+        //     // image: imageUrl ?? "",
+        //   })),
+        // },
       },
       include: { sku: true },
     });
@@ -461,19 +453,21 @@ export const addSku = async (
     });
     if (isSkuAvailable) throw new Error("SKU code already present");
 
-    let imageUrl: string | null = null;
-    if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
+    let imageUrls: string[] = [];
+    if (req.files && Array.isArray(req.files)) {
+      imageUrls = req.files.map(
+        (file: Express.Multer.File) => `/uploads/${file.filename}`
+      );
     }
     const newSku = await prisma.sku.create({
       data: {
         productId: parseInt(productId),
-        attributes,
+        attributes: JSON.parse(attributes),
         skuCode,
         productPrice,
         discount,
         stock,
-        image: imageUrl || "",
+        image: imageUrls || "",
       },
     });
     return res
@@ -500,14 +494,23 @@ export const updateSku = async (
       where: { skuCode: skuCode },
     });
     if (isSkuCode) throw new Error("SKU CODE already present");
+
+    let imageUrls: string[] = [];
+    if (req.files && Array.isArray(req.files)) {
+      imageUrls = req.files.map(
+        (file: Express.Multer.File) => `/uploads/${file.filename}`
+      );
+    }
+
     const updatedSku = await prisma.sku.update({
       where: { id: parseInt(id) },
       data: {
-        attributes,
+        attributes: JSON.parse(attributes),
         skuCode,
         productPrice,
         discount,
         stock,
+        image: imageUrls || "",
       },
     });
 

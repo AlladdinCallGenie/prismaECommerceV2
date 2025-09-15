@@ -70,33 +70,31 @@ export const ProductSchema = z.object({
     .string()
     .min(3, { message: "category name shouuld not be less than 3 characters" })
     .max(300, { message: "category length should not exceed 300 characters" }),
-  skus: z
-    .array(
-      z.object({
-        skuCode: z
-          .string()
-          .min(6, "skuCode should not be less than 6 characters"),
-        attributes: z.record(z.string(), z.string()),
-        productPrice: z.number().positive(),
-        discount: z.number().min(0).max(100),
-        stock: z.number().int().positive(),
-      })
-    )
-    .optional(),
+  // skus: z
+  //   .array(
+  //     z.object({
+  //       skuCode: z
+  //         .string()
+  //         .min(6, "skuCode should not be less than 6 characters"),
+  //       attributes: z.record(z.string(), z.string()),
+  //       productPrice: z.number().positive(),
+  //       discount: z.number().min(0).max(100),
+  //       stock: z.number().int().positive(),
+  //     })
+  //   )
+  //   .optional(),
   // .min(1, "At least one SKU is required"),
 });
 
 export const SkuSchema = z.object({
-  productId: z.number().int().positive(),
-  attributes: z.json(),
+  attributes: z.string(),
   skuCode: z
     .string()
     .min(6, { message: "skuCode should not be less than 6 characters" })
     .max(25, { message: "skuCode should not be less than 15 characters " }),
-  productPrice: z.number().positive(),
-  discount: z.number().positive(),
-  stock: z.number().int().positive(),
-  image: z.string(),
+  productPrice: z.coerce.number().positive(),
+  discount: z.coerce.number().positive().optional(),
+  stock: z.coerce.number().int().positive(),
 });
 
 const CartSchema = z.object({

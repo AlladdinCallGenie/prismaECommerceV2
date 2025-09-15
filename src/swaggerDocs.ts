@@ -183,6 +183,66 @@
 
 /**
  * @swagger
+ * /api/auth/login-email:
+ *   post:
+ *     summary: Send OTP to user email for login
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *     responses:
+ *       200:
+ *         description: OTP sent to Email
+ *       400:
+ *         description: Invalid credentials or inactive/deleted account
+ */
+
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   post:
+ *     summary: Verify OTP from email and login user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Logged in successfully
+ *       400:
+ *         description: Invalid or expired OTP
+ *       404:
+ *         description: User not found
+ */
+
+
+
+/**
+ * @swagger
  * /api/admin/users:
  *   get:
  *     summary: Get all users (paginated)
@@ -502,21 +562,6 @@
  *                 type: string
  *               brand:
  *                 type: string
- *               skus:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     attributes:
- *                       type: object
- *                     skuCode:
- *                       type: string
- *                     productPrice:
- *                       type: number
- *                     discount:
- *                       type: number
- *                     stock:
- *                       type: integer
  *     responses:
  *       200:
  *         description: Product added successfully
@@ -648,7 +693,7 @@
  * @swagger
  * /api/admin/sku/{productId}:
  *   post:
- *     summary: Add a new SKU to a product
+ *     summary: Add a new SKU to a product with multiple images
  *     tags: [Admin - Product]
  *     security:
  *       - bearerAuth: []
@@ -658,23 +703,23 @@
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Product ID
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
- *               - productId
  *               - attributes
  *               - skuCode
  *               - productPrice
  *               - stock
+ *               - images
  *             properties:
- *               productId:
- *                 type: number
  *               attributes:
- *                 type: object
+ *                 type: string
+ *                 description: JSON string of SKU attributes
  *               skuCode:
  *                 type: string
  *               productPrice:
@@ -683,6 +728,12 @@
  *                 type: number
  *               stock:
  *                 type: integer
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: One or more image files
  *     responses:
  *       200:
  *         description: SKU created successfully
@@ -694,7 +745,7 @@
  * @swagger
  * /api/admin/sku/{id}:
  *   put:
- *     summary: Update an SKU
+ *     summary: Update an existing SKU
  *     tags: [Admin - Product]
  *     security:
  *       - bearerAuth: []
@@ -704,31 +755,45 @@
  *         required: true
  *         schema:
  *           type: integer
+ *         description: The ID of the SKU to update
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               productId:
- *                 type: number
  *               attributes:
- *                 type: object
+ *                 type: string
+ *                 description: JSON string of SKU attributes
  *               skuCode:
  *                 type: string
+ *                 minLength: 6
+ *                 maxLength: 25
  *               productPrice:
  *                 type: number
+ *                 description: Price of the SKU
  *               discount:
  *                 type: number
+ *                 description: Discount on the SKU
  *               stock:
  *                 type: integer
+ *                 description: Available stock
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: One or more image files for the SKU
  *     responses:
  *       200:
  *         description: SKU updated successfully
+ *       400:
+ *         description: Invalid data or duplicate SKU code
  *       404:
  *         description: SKU not found
  */
+
 
 /**
  * @swagger

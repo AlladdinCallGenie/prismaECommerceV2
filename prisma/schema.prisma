@@ -78,7 +78,7 @@ model Sku {
   productPrice Float
   discount     Float?
   stock        Int
-  image        String
+  image        String[]
   isActive     Boolean      @default(true)
   isDeleted    Boolean      @default(false)
   createdAt    DateTime     @default(now())

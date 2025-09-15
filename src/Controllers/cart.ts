@@ -59,7 +59,8 @@ export const addToCart = async (
     const sku = await prisma.sku.findUnique({
       where: { id: skuId },
     });
-    if (!sku) throw new Error("Sku not found..");
+    if (!sku || !sku.isActive || sku.isDeleted)
+      throw new Error("Sku not available..");
 
     const existingItem = await prisma.cartItems.findFirst({
       where: { cartId: cart.id, sku: { id: skuId } },

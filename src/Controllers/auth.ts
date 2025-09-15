@@ -5,6 +5,8 @@ import {
   changeUserPassword,
   forgetUserPassword,
   resetUserPassword,
+  sendloginOtp,
+  verifyEmailOtp,
 } from "../Services/auth";
 
 export const register = async (
@@ -88,6 +90,50 @@ export const resetPassword = async (
     await resetUserPassword(otp, email, password, confirmPassword);
 
     return res.status(200).json({ message: "Password reset successfully..." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//test
+export const sendLoginOtpEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, password } = req.body;
+    await sendloginOtp(email);
+    return res.status(200).json({ message: "OTP sent to Email.." });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+export const verifyLoginOtpEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, otp } = req.body;
+
+    const user = await verifyEmailOtp(email, otp);
+
+    return res.status(200).json({ message: "LoggedIn successfull...", user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//test twilio
+export const verifyOtpSms = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    
   } catch (error) {
     next(error);
   }

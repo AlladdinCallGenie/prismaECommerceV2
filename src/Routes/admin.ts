@@ -56,9 +56,9 @@ router.put("/product/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(Pr
 router.delete("/product/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteProduct);
 router.put("/product/status/:id", isAuthenticated, checkRole([Role.ADMIN]), changeProductStatus);
 router.get("/products", isAuthenticated, checkRole([Role.ADMIN]), getAllAdminProducts);
-//upload.single('image'),
-router.post("/sku/:productId", isAuthenticated, checkRole([Role.ADMIN]), validate(SkuSchema), addSku);
-router.put("/sku/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(SkuSchema), updateSku);
+// sku's 
+router.post("/sku/:productId", isAuthenticated, checkRole([Role.ADMIN]), upload.array("images",5), validate(SkuSchema), addSku);
+router.put("/sku/:id", isAuthenticated, checkRole([Role.ADMIN]), upload.array("images",5), validate(SkuSchema), updateSku);
 router.delete("/sku/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteSku);
 router.put("/sku/status/:id", isAuthenticated, checkRole([Role.ADMIN]), changeSkuStatus);
 router.get("/sku/all", isAuthenticated, checkRole([Role.ADMIN]), allSkus);

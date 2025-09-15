@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, register, forgetPassword, changePassword, resetPassword } from "../Controllers/auth";
+import { login, register, forgetPassword, changePassword, resetPassword, sendLoginOtpEmail, verifyLoginOtpEmail } from "../Controllers/auth";
 import { UserSchema } from "../Validators/validations";
 import { validate } from "../Middlewares/validate";
 import { isAuthenticated } from "../Middlewares/auth";
@@ -11,5 +11,8 @@ router.put("/change-password", isAuthenticated, changePassword);
 router.put("/forget-password", forgetPassword);
 router.put("/reset-password", resetPassword);
 
-export default router;
+//test
+router.post("/login-email", sendLoginOtpEmail);
+router.post("/verify-email", verifyLoginOtpEmail);
 
+export default router;

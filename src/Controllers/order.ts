@@ -211,7 +211,7 @@ export const checkStatus = async (
   }
 };
 
-// Imcomplete controller to repeat the order
+// controller to repeat order needs update 
 export const repeateOrder = async (
   req: Request,
   res: Response,
@@ -236,7 +236,8 @@ export const repeateOrder = async (
       const sku = await prisma.sku.findUnique({
         where: { id: item.skuId, isDeleted: false, isActive: true },
       });
-      if (!sku) throw new Error(`product ${item.skuId} not available`);
+      if (!sku || !sku.isActive || sku.isDeleted)
+        throw new Error(`product ${item.skuId} not available`);
     }
     let finalAmount = originalOrder.totalAmount;
     let couponId = null;
