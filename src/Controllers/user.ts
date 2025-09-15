@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import prisma from "../Config/config";
-import { hashPassword } from "../Utils/utilities";
 
 export const getMyProfile = async (
   req: Request,
@@ -10,7 +9,14 @@ export const getMyProfile = async (
   try {
     const user = req.user;
     if (!user) throw new Error("Not LoggedIn..");
-    res.json({ user });
+    const userData = {
+      email: user.email,
+      username: user.username,
+      fullName: user.fullName,
+      password: user.password,
+      phone: user.phone,
+    };
+    res.json({ userData });
   } catch (error) {
     next(error);
   }
@@ -23,17 +29,17 @@ export const updateMyProfile = async (
   try {
     if (!req.user) return res.status(401).json({ error: "Not logged in" });
     const id = req.user.id;
-    const { username, email, firstName, lastName, password } = req.body;
+    const { username, email, fullName, phone } = req.body;
     const user = await prisma.user.findUnique({ where: { id: id } });
     if (!user)
       return res
         .status(404)
         .json({ error: "No user with the given Id found...." });
-    const hashedPassword = await hashPassword(password);
     const updatedUser = await prisma.user.update({
       where: { id: id },
-      data: { username, email, firstName, lastName, password: hashedPassword },
+      data: { username, email, fullName, phone },
     });
+
     res.json({ updatedUser });
   } catch (error) {
     next(error);
@@ -47,7 +53,10 @@ export const deleteMyProfile = async (
   try {
     if (!req.user) return res.status(401).json({ error: "Not logged in" });
     const id = req.user.id;
-    await prisma.user.update({ where: { id: id }, data: { isDeleted: true } });
+    await prisma.user.update({
+      where: { id: id },
+      data: { isDeleted: true, isActive: false },
+    });
     res.status(200).json({ message: "User deleted successfully!.. " });
   } catch (error) {
     next(error);
@@ -69,13 +78,13 @@ export const addShippingAddress = async (
       city,
       state,
       country,
-      isShippingAddress,
+      defaultAddress,
       addressType,
     } = req.body;
-    if (isShippingAddress) {
+    if (defaultAddress) {
       await prisma.userAddress.updateMany({
-        where: { userId: userId, isShippingAddress: true },
-        data: { isShippingAddress: false },
+        where: { userId: userId, defaultAddress: true },
+        data: { defaultAddress: false },
       });
     }
 
@@ -88,7 +97,7 @@ export const addShippingAddress = async (
         city,
         state,
         country,
-        isShippingAddress,
+        defaultAddress,
         addressType,
       },
     });

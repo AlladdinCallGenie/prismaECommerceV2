@@ -52,7 +52,7 @@ export const updateUser = async (
 ) => {
   try {
     const { id } = req.params;
-    const { email, password, username, firstName, lastName, role } = req.body;
+    const { email, password, username, fullName, phone, role } = req.body;
     const user = await prisma.user.findUnique({ where: { id: Number(id) } });
     if (!user)
       return res.status(404).json({ message: "User does not exists.. " });
@@ -62,8 +62,8 @@ export const updateUser = async (
       data: {
         email,
         username,
-        firstName,
-        lastName,
+        fullName,
+        phone,
         password: hashedPassword,
         role,
       },
@@ -138,22 +138,26 @@ export const createCategory = async (
     next(error);
   }
 };
-export const deleteCategory = async (
+export const changeCategoryStatus = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { id } = req.params;
+    const { status } = req.body;
     const category = await prisma.category.findUnique({
       where: { id: parseInt(id) },
     });
     if (!category)
       return res.status(404).json({ error: "No category found ..." });
-    await prisma.category.delete({ where: { id: parseInt(id) } });
+    await prisma.category.update({
+      where: { id: parseInt(id) },
+      data: { isActive: JSON.parse(status) },
+    });
     return res
       .status(200)
-      .json({ message: "Category deleted successfully..." });
+      .json({ message: `Changed category status to: ${JSON.parse(status)}` });
   } catch (error) {
     next(error);
   }
@@ -346,8 +350,10 @@ export const deleteProduct = async (
       data: {
         isDeleted: true,
         isDeletedAt: new Date(),
+        isActive: false,
       },
     });
+
     return res.status(200).json({ message: "product deleted successfully..." });
   } catch (error) {
     next(error);
@@ -456,7 +462,9 @@ export const addSku = async (
     if (isSkuAvailable) throw new Error("SKU code already present");
 
     let imageUrl: string | null = null;
-
+    if (req.file) {
+      imageUrl = `/uploads/${req.file.filename}`;
+    }
     const newSku = await prisma.sku.create({
       data: {
         productId: parseInt(productId),
@@ -525,6 +533,7 @@ export const deleteSku = async (
       where: { id: parseInt(id) },
       data: {
         isDeleted: true,
+        isActive: false,
       },
     });
     return res.status(200).json({ message: "SKU deleted successfully..." });
@@ -693,8 +702,11 @@ export const changeCouponStatus = async (
       where: { id: parseInt(id) },
       data: { isActive: JSON.parse(status) },
     });
-    return res.status(200).json({ mesasge: `Changed coupon status to: ${JSON.parse(status)}`});
+    return res
+      .status(200)
+      .json({ mesasge: `Changed coupon status to: ${JSON.parse(status)}` });
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };

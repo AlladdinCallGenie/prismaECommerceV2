@@ -13,17 +13,9 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    const { email, username, firstName, lastName, password, cpassword } =
-      req.body;
+    const { email, username, fullName, password, phone } = req.body;
 
-    await registerUser(
-      email,
-      username,
-      firstName,
-      lastName,
-      password,
-      cpassword
-    );
+    await registerUser(email, username, fullName, phone, password);
 
     res.status(201).json({ message: "User registered successfully...." });
   } catch (error) {

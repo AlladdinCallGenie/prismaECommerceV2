@@ -1,13 +1,14 @@
 import { NextFunction, Request, Response } from "express";
 import prisma from "../Config/config";
 
-export const placeOrder = async (
+// These are the skus in the order:-  [ { skuId: 3 }, { skuId: 1 }, { skuId: 2 } ]
+export const myPlaceOrder = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if (!req.user) return res.status(401).json({ message: "Login ...." });
+    if (!req.user) return res.status(401).json({ message: "Please Login.." });
     const userId = req.user.id;
     const { addressId, couponCode } = req.body;
 
@@ -15,84 +16,118 @@ export const placeOrder = async (
       where: { userId },
       include: { cartItem: true },
     });
+
     if (!cart || cart.cartItem.length === 0)
       return res.status(400).json({ message: "Cart is Empty.." });
 
-    const address = await prisma.userAddress.findFirst({
-      where: { id: addressId, userId },
+    for (const item of cart.cartItem) {
+      const sku = await prisma.sku.findUnique({
+        where: { id: item.skuId },
+      });
+      if (!sku || sku.stock < item.quantity)
+        throw new Error(
+          `Not Enough stock for skuId: ${item.skuId}. Available stock only ${sku?.stock}, ordered ${item.quantity}`
+        );
+    }
+
+    const address = await prisma.userAddress.findUnique({
+      where: { id: Number(addressId), userId },
     });
-    if (!address || !address.isShippingAddress)
-      throw new Error("Invalid or Not shipping address");
+
+    if (!address || !address.defaultAddress)
+      throw new Error("Invalid or not Shipping(default) address");
 
     const totalAmount = cart.cartItem.reduce(
       (sum, item) => sum + item.price,
       0
     );
+
     let finalAmount = totalAmount;
     let discountAmount = 0;
     let couponId: number | null = null;
 
     if (couponCode) {
-      const coupon = await prisma.coupon.findFirst({
-        where: { code: couponCode },
+      const coupon = await prisma.coupon.findUnique({
+        where: {
+          code: couponCode,
+        },
       });
 
-      if (!coupon || coupon.isActive == false) {
+      if (!coupon || coupon.isActive === false)
         return res
           .status(400)
           .json({ error: "Invalid or Inactive coupon code " });
-      }
 
       const now = new Date();
       if (now < coupon.validFrom || now > coupon.validTo) {
         return res
           .status(400)
-          .json({ message: "Coupon expired or not yet valid" });
+          .json({ message: "Coupon expired or not yet valid " });
       }
 
-      if (coupon.minOrderValue && totalAmount < coupon.minOrderValue) {
+      if (coupon.minOrderValue && totalAmount < coupon.minOrderValue)
         return res
           .status(400)
-          .json({ error: "Order does not meet coupon requirement " });
-      }
+          .json({ message: "Order does not meet coupon requirements" });
 
       if (coupon.discountType === "PERCENTAGE") {
         discountAmount = (totalAmount * coupon.discountValue) / 100;
       } else if (coupon.discountType === "FIXED") {
         discountAmount = coupon.discountValue;
       }
-      if (discountAmount > totalAmount) {
+
+      if (discountAmount > totalAmount)
         return res
           .status(400)
-          .json({ error: "Discount cannot exceed final amount" });
-      }
+          .json({ message: "discount amount cannoy exceed total amount" });
+
       finalAmount = totalAmount - discountAmount;
       couponId = coupon.id;
     }
 
-    const order = await prisma.order.create({
-      data: {
-        userId: userId,
-        shippingAddressId: address.id,
-        couponId: couponId,
-        totalAmount: totalAmount,
-        discountAmount: discountAmount,
-        finalAmount: finalAmount,
-        orderItems: {
-          create: cart.cartItem.map((item) => ({
-            skuId: item.skuId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
+    const order = await prisma.$transaction(async (tx) => {
+      const newOrder = await tx.order.create({
+        data: {
+          userId,
+          defaultAddress: address.id,
+          couponId,
+          totalAmount,
+          discountAmount,
+          finalAmount,
+          orderItems: {
+            create: cart.cartItem.map((item) => ({
+              skuId: item.skuId,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+          },
         },
-      },
-      include: { orderItems: true, coupon: true },
+        include: { orderItems: true, coupon: true },
+      });
+
+      for (const item of newOrder.orderItems) {
+        await tx.sku.update({
+          where: {
+            id: item.skuId,
+          },
+          data: {
+            stock: { decrement: item.quantity },
+          },
+        });
+      }
+
+      await tx.cartItems.deleteMany({
+        where: {
+          cartId: cart.id,
+        },
+      });
+
+      return newOrder;
     });
 
-    await prisma.cartItems.deleteMany({ where: { cartId: cart.id } });
     return res
       .status(201)
-      .json({ message: "Order placed successfully ", order });
+      .json({ message: "Order placed successfully ... ", order });
   } catch (error) {
     next(error);
   }
@@ -193,7 +228,7 @@ export const repeateOrder = async (
     });
     if (!originalOrder) throw new Error("originalOrder Not Found");
     const address = await prisma.userAddress.findFirst({
-      where: { id: addressId, userId, isShippingAddress: true },
+      where: { id: addressId, userId, defaultAddress: true },
     });
     if (!address) throw new Error("Invalid or non-shipping address");
 
@@ -238,7 +273,7 @@ export const repeateOrder = async (
     const newOrder = await prisma.order.create({
       data: {
         userId,
-        shippingAddressId: address.id,
+        defaultAddress: address.id,
         couponId: couponId,
         totalAmount: originalOrder.totalAmount,
         discountAmount,
@@ -266,7 +301,6 @@ export const repeateOrder = async (
     return res
       .status(200)
       .json({ message: "Order repeated successfully..", newOrder: newOrder });
-    return res.json({ originalOrder });
   } catch (error) {
     next(error);
   }

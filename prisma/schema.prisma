@@ -17,9 +17,9 @@ model User {
   id           Int       @id @default(autoincrement())
   email        String    @unique
   username     String
-  firstName    String
-  lastName     String
+  fullName     String
   password     String
+  phone        String
   isDeleted    Boolean   @default(false)
   createdAt    DateTime  @default(now())
   lastLogin    DateTime?
@@ -36,18 +36,18 @@ model User {
 }
 
 model UserAddress {
-  id                Int         @id @default(autoincrement())
-  userId            Int
-  addressLine1      String
-  addressLine2      String?
-  postalCode        Int
-  city              String
-  state             String
-  country           String
-  addressType       AddressType @default(HOME)
-  isShippingAddress Boolean     @default(false)
-  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  order             Order[]
+  id             Int         @id @default(autoincrement())
+  userId         Int
+  addressLine1   String
+  addressLine2   String?
+  postalCode     Int
+  city           String
+  state          String
+  country        String
+  addressType    AddressType @default(HOME)
+  defaultAddress Boolean     @default(false)
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order          Order[]
 }
 
 model Category {
@@ -108,19 +108,19 @@ model CartItems {
 }
 
 model Order {
-  id                Int          @id @default(autoincrement())
-  userId            Int
-  shippingAddressId Int
-  couponId          Int? //define relation 
-  orderDate         DateTime     @default(now())
-  totalAmount       Float
-  discountAmount    Float?
-  finalAmount       Float?
-  status            Status       @default(PENDING)
-  user              User         @relation(fields: [userId], references: [id])
-  address           UserAddress  @relation(fields: [shippingAddressId], references: [id])
-  coupon            Coupon?      @relation(fields: [couponId], references: [id])
-  orderItems        OrderItems[]
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  defaultAddress Int
+  couponId       Int? //define relation 
+  orderDate      DateTime     @default(now())
+  totalAmount    Float
+  discountAmount Float?
+  finalAmount    Float?
+  status         Status       @default(PENDING)
+  user           User         @relation(fields: [userId], references: [id])
+  address        UserAddress  @relation(fields: [defaultAddress], references: [id])
+  coupon         Coupon?      @relation(fields: [couponId], references: [id])
+  orderItems     OrderItems[]
 }
 
 model OrderItems {
@@ -135,7 +135,7 @@ model OrderItems {
 
 model Coupon {
   id            Int          @id @default(autoincrement())
-  code          String
+  code          String       @unique
   description   String?
   discountType  DiscountType
   discountValue Float

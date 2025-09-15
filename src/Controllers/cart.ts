@@ -25,7 +25,7 @@ export const getCart = async (
                 skuCode: true,
                 productPrice: true,
                 discount: true,
-                stock: true,
+                stock: false,
                 image: true,
               },
             },
@@ -72,6 +72,7 @@ export const addToCart = async (
           price: (existingItem.quantity + quantity) * sku.productPrice,
         },
       });
+
       return res.status(200).json({ updatedItem });
     } else {
       const newItem = await prisma.cartItems.create({
@@ -82,6 +83,7 @@ export const addToCart = async (
           price: sku.productPrice * quantity,
         },
       });
+      // const newItemData =
       return res.status(200).json({ newItem });
     }
   } catch (error) {

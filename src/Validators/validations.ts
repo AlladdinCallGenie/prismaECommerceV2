@@ -8,20 +8,22 @@ export const UserSchema = z.object({
     .trim()
     .min(3, { message: "Name must be atleast 3 characters" })
     .max(100, { message: "Name must not be more than 100 characters" }),
-  firstName: z
+  fullName: z
     .string()
     .trim()
-    .min(1, { message: "firstName must be atleast 3 characters" })
-    .max(100, { message: "firstName must not be more than 100 characters" }),
-  lastName: z
-    .string()
-    .trim()
-    .min(1, { message: "lastName must be atleast 3 characters" })
-    .max(100, { message: "lastName must not be more than 100 characters" }),
+    .min(1, { message: "full Name must be atleast 3 characters" })
+    .max(150, { message: "firstName must not be more than 100 characters" }),
   password: z
     .string()
     .trim()
     .min(8, { message: "password must be atleast 8 characters" }),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+[1-9]\d{1,14}$/, {
+      message:
+        "Phone must be in international format (E.164), e.g. +14155552671",
+    }),
 });
 
 export const AddressSchema = z.object({
@@ -44,7 +46,7 @@ export const AddressSchema = z.object({
     .min(3, { message: "country name should not be less than 3 characters" })
     .max(200, { message: "contry name should have max 200 characters" }),
   addressType: z.enum(AddressType),
-  isShippingAddress: z.boolean(),
+  defaultAddress: z.boolean(),
 });
 
 export const CategorySchema = z.object({
@@ -80,7 +82,8 @@ export const ProductSchema = z.object({
         stock: z.number().int().positive(),
       })
     )
-    .min(1, "At least one SKU is required"),
+    .optional(),
+  // .min(1, "At least one SKU is required"),
 });
 
 export const SkuSchema = z.object({

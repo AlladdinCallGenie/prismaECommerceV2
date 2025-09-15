@@ -7,7 +7,7 @@ import { validate } from "../Middlewares/validate";
 import { upload } from "../Middlewares/multer";
 import {
   createCategory,
-  deleteCategory,
+  changeCategoryStatus,
   allcategories,
   getCategoryById,
   updateCategory,
@@ -47,16 +47,16 @@ router.put("/users/status/:id", isAuthenticated, checkRole([Role.ADMIN]), change
 router.get("/categories", isAuthenticated, checkRole([Role.ADMIN]), allcategories);
 router.post("/category", isAuthenticated, checkRole([Role.ADMIN]), validate(CategorySchema), createCategory);
 router.get("/category/:id", isAuthenticated, checkRole([Role.ADMIN]), getCategoryById);
-router.delete("/category/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteCategory);
+router.put("/category/status/:id", isAuthenticated, checkRole([Role.ADMIN]), changeCategoryStatus);
 router.put("/category/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(CategorySchema), updateCategory);
 
-// ---------->Admin Product Routes<----------                       validate(ProductSchema)
+// ---------->Admin Product Routes<----------
 router.post("/product", isAuthenticated, checkRole([Role.ADMIN]), validate(ProductSchema), addProduct);
 router.put("/product/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(ProductSchema), updateProduct);
 router.delete("/product/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteProduct);
 router.put("/product/status/:id", isAuthenticated, checkRole([Role.ADMIN]), changeProductStatus);
 router.get("/products", isAuthenticated, checkRole([Role.ADMIN]), getAllAdminProducts);
-
+//upload.single('image'),
 router.post("/sku/:productId", isAuthenticated, checkRole([Role.ADMIN]), validate(SkuSchema), addSku);
 router.put("/sku/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(SkuSchema), updateSku);
 router.delete("/sku/:id", isAuthenticated, checkRole([Role.ADMIN]), deleteSku);
@@ -67,7 +67,7 @@ router.get("/sku/all", isAuthenticated, checkRole([Role.ADMIN]), allSkus);
 router.get("/coupons", isAuthenticated, checkRole([Role.ADMIN]), allCoupon);
 router.post("/coupon", isAuthenticated, checkRole([Role.ADMIN]), validate(CouponSchema), addCoupon);
 router.put("/coupon/:id", isAuthenticated, checkRole([Role.ADMIN]), validate(CouponSchema), updateCoupon);
-router.delete("/coupon/:id", isAuthenticated, checkRole([Role.ADMIN]), changeCouponStatus);
+router.put("/coupon/status/:id", isAuthenticated, checkRole([Role.ADMIN]), changeCouponStatus);
 
 // ---------->Admin Order Routes<----------
 router.get("/orders/all", isAuthenticated, checkRole([Role.ADMIN]), allOrders);

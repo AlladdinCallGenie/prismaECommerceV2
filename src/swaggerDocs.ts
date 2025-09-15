@@ -51,15 +51,15 @@
  *               username:
  *                 type: string
  *                 example: johndoe
- *               firstName:
+ *               fullName:
  *                 type: string
- *                 example: John
- *               lastName:
+ *                 example: John Doe
+ *               phone:
  *                 type: string
- *                 example: Doe
+ *                 example: '+919594331923'
  *               password:
  *                 type: string
- *                 example: StrongPassword123
+ *                 example: password
  *     responses:
  *       201:
  *         description: User created successfully
@@ -302,7 +302,7 @@
  * @swagger
  * /api/admin/users/status/{id}:
  *   put:
- *     summary: Deactivate user account
+ *     summary: Change user account status (activate/deactivate)
  *     tags: [Admin - User]
  *     security:
  *       - bearerAuth: []
@@ -313,31 +313,22 @@
  *         schema:
  *           type: integer
  *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: boolean
+ *                 description: Set to `true` to activate, `false` to deactivate
+ *                 example: true
  *     responses:
  *       200:
- *         description: User deactivated successfully
- *       404:
- *         description: User not found
- */
-
-/**
- * @swagger
- * /api/admin/users/activate/{id}:
- *   put:
- *     summary: Activate user account
- *     tags: [Admin - User]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: User ID
- *     responses:
- *       200:
- *         description: User activated successfully
+ *         description: User status changed successfully
  *       404:
  *         description: User not found
  */
@@ -417,9 +408,9 @@
 
 /**
  * @swagger
- * /api/admin/category/{id}:
+ * /api/admin/category/status/{id}:
  *   delete:
- *     summary: Delete category by ID
+ *     summary: Change category status (activate/deactivate)
  *     tags: [Admin - Category]
  *     security:
  *       - bearerAuth: []
@@ -430,9 +421,22 @@
  *         schema:
  *           type: integer
  *         description: Category ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: boolean
+ *                 description: Set `false` to deactivate (soft delete), `true` to activate
+ *                 example: false
  *     responses:
  *       200:
- *         description: Category deleted successfully
+ *         description: Category status updated successfully
  *       404:
  *         description: Category not found
  */
@@ -503,8 +507,6 @@
  *                 items:
  *                   type: object
  *                   properties:
- *                     description:
- *                       type: string
  *                     attributes:
  *                       type: object
  *                     skuCode:
@@ -583,7 +585,7 @@
  * @swagger
  * /api/admin/product/status/{id}:
  *   put:
- *     summary: Change product status (activate/deactivate)
+ *     summary: Change product status (activate/deactivate) and update related SKUs
  *     tags: [Admin - Product]
  *     security:
  *       - bearerAuth: []
@@ -593,18 +595,29 @@
  *         required: true
  *         schema:
  *           type: integer
- *       - in: query
- *         name: action
- *         required: true
- *         schema:
- *           type: string
- *           enum: [activate, deactivate]
+ *         description: Product ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: boolean
+ *                 description: Set `true` to activate, `false` to deactivate
+ *                 example: false
  *     responses:
  *       200:
- *         description: Product status updated
+ *         description: Product and related SKUs status updated successfully
+ *       400:
+ *         description: Invalid status value
  *       404:
  *         description: Product not found
  */
+
 /**
  * @swagger
  * /api/admin/products:
@@ -774,7 +787,6 @@
  *         description: SKU not found
  */
 
-
 /**
  * @swagger
  * /api/admin/sku/all:
@@ -912,9 +924,9 @@
 
 /**
  * @swagger
- * /api/admin/coupon/{id}:
- *   delete:
- *     summary: Soft delete a coupon
+ * /api/admin/coupon/status/{id}:
+ *   put:
+ *     summary: Change coupon status (activate/deactivate)
  *     tags: [Admin - Coupon]
  *     security:
  *       - bearerAuth: []
@@ -924,32 +936,27 @@
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Coupon ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: boolean
+ *                 description: Set `true` to activate, `false` to deactivate
+ *                 example: true
  *     responses:
  *       200:
- *         description: Coupon deleted successfully
+ *         description: Coupon status updated successfully
+ *       400:
+ *         description: Invalid status value
  *       404:
  *         description: Coupon not found
- */
-
-/**
- * @swagger
- * /api/admin/coupon/activate/{id}:
- *   put:
- *     summary: Activate a coupon
- *     tags: [Admin - Coupon]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Coupon activated successfully
- *       400:
- *         description: Coupon does not exist
  */
 
 /**
@@ -1128,7 +1135,7 @@
  *                 type: string
  *               country:
  *                 type: string
- *               isShippingAddress:
+ *               defaultAddress:
  *                 type: boolean
  *                 example: true
  *               addressType:
@@ -1166,7 +1173,7 @@
 
 /**
  * @swagger
- * /api/products/all:
+ * /api/products/:
  *   get:
  *     summary: Get all products with pagination
  *     tags: [Products]

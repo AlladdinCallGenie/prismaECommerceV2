@@ -304,11 +304,139 @@ MemoryStorage → Keeps file in memory buffer, then you upload it to cloud stora
     
     
     
+//    PLACE ORDER CONTROLLER FOR CHECKOUT ..... 
     
-    
-    
-    
-    
+export const placeOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: "Login required" });
+    const userId = req.user.id;
+    const { addressId, couponCode } = req.body;
+
+    const cart = await prisma.cart.findUnique({
+      where: { userId },
+      include: { cartItem: true },
+    });
+
+    if (!cart || cart.cartItem.length === 0)
+      return res.status(400).json({ message: "Cart is Empty.." });
+
+    const address = await prisma.userAddress.findFirst({
+      where: { id: addressId, userId },
+    });
+    if (!address || !address.defaultAddress)
+      throw new Error("Invalid or not a shipping address");
+
+    const totalAmount = cart.cartItem.reduce(
+      (sum, item) => sum + item.price,
+      0
+    );
+
+    let finalAmount = totalAmount;
+    let discountAmount = 0;
+    let couponId: number | null = null;
+
+    if (couponCode) {
+      const coupon = await prisma.coupon.findFirst({
+        where: { code: couponCode },
+      });
+
+      if (!coupon || coupon.isActive === false) {
+        return res
+          .status(400)
+          .json({ error: "Invalid or Inactive coupon code " });
+      }
+
+      const now = new Date();
+      if (now < coupon.validFrom || now > coupon.validTo) {
+        return res
+          .status(400)
+          .json({ message: "Coupon expired or not yet valid" });
+      }
+
+      if (coupon.minOrderValue && totalAmount < coupon.minOrderValue) {
+        return res
+          .status(400)
+          .json({ error: "Order does not meet coupon requirement" });
+      }
+
+      if (coupon.discountType === "PERCENTAGE") {
+        discountAmount = (totalAmount * coupon.discountValue) / 100;
+      } else if (coupon.discountType === "FIXED") {
+        discountAmount = coupon.discountValue;
+      }
+
+      if (discountAmount > totalAmount) {
+        return res
+          .status(400)
+          .json({ error: "Discount cannot exceed final amount" });
+      }
+
+      finalAmount = totalAmount - discountAmount;
+      couponId = coupon.id;
+    }
+
+    // Transaction: order + stock decrement + clear cart
+    const order = await prisma.$transaction(async (tx) => {
+      // 🔎 Check stock for each cart item
+      for (const item of cart.cartItem) {
+        const sku = await tx.sku.findUnique({
+          where: { id: item.skuId },
+        });
+
+        if (!sku || sku.stock < item.quantity) {
+          throw new Error(
+            `Not enough stock for SKU ${item.skuId} (requested ${item.quantity}, available ${sku?.stock ?? 0})`
+          );
+        }
+      }
+
+      // 📝 Create order
+      const newOrder = await tx.order.create({
+        data: {
+          userId,
+          defaultAddress: address.id,
+          couponId,
+          totalAmount,
+          discountAmount,
+          finalAmount,
+          orderItems: {
+            create: cart.cartItem.map((item) => ({
+              skuId: item.skuId,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+          },
+        },
+        include: { orderItems: true, coupon: true },
+      });
+
+      // 📉 Decrement stock
+      for (const item of newOrder.orderItems) {
+        await tx.sku.update({
+          where: { id: item.skuId },
+          data: {
+            stock: { decrement: item.quantity },
+          },
+        });
+      }
+
+      // 🧹 Clear cart
+      await tx.cartItems.deleteMany({ where: { cartId: cart.id } });
+
+      return newOrder;
+    });
+
+    return res
+      .status(201)
+      .json({ message: "Order placed successfully", order });
+  } catch (error) {
+    next(error);
+  }
+};
     
     
     

@@ -38,34 +38,31 @@ export const loginUser = async (email: string, password: string) => {
   };
   return userData;
 };
+
 export const registerUser = async (
   email: string,
   username: string,
-  firstName: string,
-  lastName: string,
-  password: string,
-  cpassword: string
+  fullName: string,
+  phone: string,
+  password: string
 ) => {
   const isUser = await prisma.user.findUnique({ where: { email: email } });
   if (isUser) throw new Error("User already exists.");
-
-  if (password != cpassword) {
-    throw new Error("password and cpassword doesnt match..");
-  }
 
   const hashedPassword = await hashPassword(password);
   const user = await prisma.user.create({
     data: {
       email,
       username,
-      firstName,
-      lastName,
+      fullName,
+      phone,
       password: hashedPassword,
     },
   });
 
   return user;
 };
+
 export const changeUserPassword = async (
   userId: number,
   oldPassword: string,
@@ -97,6 +94,7 @@ export const changeUserPassword = async (
     },
   });
 };
+
 export const forgetUserPassword = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: { email: email },
@@ -133,6 +131,7 @@ export const forgetUserPassword = async (email: string) => {
     `,
   });
 };
+
 export const resetUserPassword = async (
   otp: string,
   email: string,
