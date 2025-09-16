@@ -7,9 +7,13 @@ import {
   hashPassword,
   transporter,
 } from "../Utils/utilities";
-import axios from "axios";
+import twilio from "twilio";
 import dotenv from "dotenv";
 dotenv.config();
+
+const ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || "";
+const AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
+const VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_ID || "";
 
 export const loginUser = async (email: string, password: string) => {
   const user = await prisma.user.findUnique({ where: { email } });
@@ -170,7 +174,7 @@ export const resetUserPassword = async (
   });
 };
 
-//test
+//test email otp
 export const sendloginOtp = async (email: string) => {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw new Error("Invalid Credentials...");
@@ -207,7 +211,6 @@ export const sendloginOtp = async (email: string) => {
     `,
   });
 };
-
 export const verifyEmailOtp = async (email: string, otp: string) => {
   const user = await prisma.user.findUnique({
     where: { email: email },
@@ -245,4 +248,75 @@ export const verifyEmailOtp = async (email: string, otp: string) => {
     },
   });
   return loggedInUser;
+};
+
+// test sms OTP
+const accountSid = ACCOUNT_SID;
+const authToken = AUTH_TOKEN;
+const client = twilio(accountSid, authToken);
+const verifyServiceId = VERIFY_SERVICE_SID;
+
+export const sendSms = async (email: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+  if (!user) throw new Error(`No user with email: ${email}`);
+  const phone = user.phone;
+  if (!phone) throw new Error(`No phone with email: ${email}`);
+
+  const verification = await client.verify.v2
+    .services(verifyServiceId)
+    .verifications.create({
+      to: phone,
+      channel: "sms",
+    });
+
+  return verification.status;
+};
+
+export const verifySms = async (email: string, otp: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+  if (!user) throw new Error(`No user with email: ${email}`);
+  const phone = user.phone;
+  if (!phone) throw new Error(`No phone with email: ${email}`);
+
+  const verification = await client.verify.v2
+    .services(verifyServiceId)
+    .verificationChecks.create({ to: phone, code: otp });
+
+  if (verification.status === "approved") {
+    const accessToken = generateAccessToken({ email: user.email });
+    const refreshToken = generateRefreshToken({ id: user.id });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        otp: null,
+        otpExpiry: null,
+      },
+    });
+    const loggedInUser = await prisma.user.findUnique({
+      select: {
+        email: true,
+        username: true,
+        fullName: true,
+        phone: true,
+        accessToken: true,
+        refreshToken: true,
+      },
+      where: {
+        email,
+      },
+    });
+
+    return loggedInUser
+  }
 };

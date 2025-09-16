@@ -30,6 +30,9 @@
  *
  *   - name: User
  *     description: General user profile and account endpoints
+ *
+ *   - name: Wishlist
+ *     description: user Wishlist endpoints
  */
 
 /**
@@ -238,8 +241,87 @@
  *       404:
  *         description: User not found
  */
+/**
+ * @swagger
+ * /api/auth/send-otp:
+ *   post:
+ *     summary: Send OTP via SMS for user authentication
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: OTP sent successfully..
+ *       400:
+ *         description: Invalid request or missing data
+ *       404:
+ *         description: User not found or phone number missing
+ *       500:
+ *         description: Failed to send OTP
+ */
 
-
+/**
+ * @swagger
+ * /api/auth/verify-otp:
+ *   post:
+ *     summary: Verify OTP sent to user's phone
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: OTP verified successfully
+ *       400:
+ *         description: Invalid request (missing email or OTP)
+ *       401:
+ *         description: OTP is invalid or expired
+ *       404:
+ *         description: User not found or no phone number registered
+ *       500:
+ *         description: Error verifying OTP
+ */
 
 /**
  * @swagger
@@ -793,7 +875,6 @@
  *       404:
  *         description: SKU not found
  */
-
 
 /**
  * @swagger
@@ -1570,4 +1651,204 @@
  *         description: Unauthorized (user not logged in)
  *       404:
  *         description: Order not found
+ */
+
+// wishlisthere
+
+/**
+ * @swagger
+ * /api/wishlist/my-wishlist:
+ *   get:
+ *     summary: Get logged-in user's wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Wishlist fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Your Wishlist:"
+ *                 wishlist:
+ *                   type: object
+ *                   properties:
+ *                     wishListItems:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           sku:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 10
+ *                               productId:
+ *                                 type: integer
+ *                                 example: 5
+ *                               attributes:
+ *                                 type: object
+ *                                 example:
+ *                                   color: "red"
+ *                                   size: "M"
+ *                               skuCode:
+ *                                 type: string
+ *                                 example: "SKU123456"
+ *                               productPrice:
+ *                                 type: number
+ *                                 example: 999.99
+ *                               discount:
+ *                                 type: number
+ *                                 example: 10
+ *                               image:
+ *                                 type: string
+ *                                 example: "/uploads/sku-image.jpg"
+ *       401:
+ *         description: Unauthorized, login required
+ *       404:
+ *         description: Wishlist not found
+ */
+/**
+ * @swagger
+ * /api/wishlist/add:
+ *   post:
+ *     summary: Add an item to the user's wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - skuId
+ *             properties:
+ *               skuId:
+ *                 type: integer
+ *                 example: 12
+ *     responses:
+ *       200:
+ *         description: Item added to wishlist successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Item added to wishlist.."
+ *                 item:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 101
+ *                     wishListId:
+ *                       type: integer
+ *                       example: 1
+ *                     skuId:
+ *                       type: integer
+ *                       example: 12
+ *       400:
+ *         description: Invalid request (e.g., SKU not available or already in wishlist)
+ *       401:
+ *         description: Unauthorized, login required
+ */
+/**
+ * @swagger
+ * /api/wishlist/remove/{id}:
+ *   delete:
+ *     summary: Remove an item from the wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Wishlist item ID to remove
+ *     responses:
+ *       200:
+ *         description: Item removed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "item deleted successfully..."
+ *       404:
+ *         description: Item not found
+ *       401:
+ *         description: Unauthorized, login required
+ */
+/**
+ * @swagger
+ * /api/wishlist/cart:
+ *   post:
+ *     summary: Add an item from wishlist to the user's cart
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - skuId
+ *             properties:
+ *               skuId:
+ *                 type: integer
+ *                 example: 101
+ *     responses:
+ *       200:
+ *         description: Item successfully added to cart
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Item added to cart
+ *                 newItem:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     cartId:
+ *                       type: integer
+ *                       example: 5
+ *                     skuId:
+ *                       type: integer
+ *                       example: 101
+ *                     quantity:
+ *                       type: integer
+ *                       example: 1
+ *                     price:
+ *                       type: number
+ *                       format: float
+ *                       example: 499.99
+ *       400:
+ *         description: Invalid input or item already in cart
+ *       401:
+ *         description: Unauthorized, login required
+ *       404:
+ *         description: SKU not available
  */

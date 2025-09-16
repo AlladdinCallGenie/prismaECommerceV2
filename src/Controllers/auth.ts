@@ -7,6 +7,8 @@ import {
   resetUserPassword,
   sendloginOtp,
   verifyEmailOtp,
+  sendSms,
+  verifySms,
 } from "../Services/auth";
 
 export const register = async (
@@ -95,7 +97,7 @@ export const resetPassword = async (
   }
 };
 
-//test
+//test email otp
 export const sendLoginOtpEmail = async (
   req: Request,
   res: Response,
@@ -127,13 +129,41 @@ export const verifyLoginOtpEmail = async (
 };
 
 //test twilio
+
+export const sendOtpSms = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+
+    const status = await sendSms(email);
+
+    if (status === "pending") {
+      return res.status(200).json({ message: "OTP sent successfully.. " });
+    }
+    return res.status(500).json({ message: "Failed to send OTP" });
+  } catch (error) {
+    next(error);
+  }
+};
 export const verifyOtpSms = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    
+    const { email, otp } = req.body;
+
+    const user = await verifySms(email, otp);
+
+    if (user) {
+      return res
+        .status(500)
+        .json({ message: "OTP verified, LoggedIn user: ", user });
+    }
+    return res.status(500).json({ message: "Invalid or expired OTP!" });
   } catch (error) {
     next(error);
   }

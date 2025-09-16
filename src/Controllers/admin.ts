@@ -801,6 +801,8 @@ export const updateStatus = async (
   }
 };
 
+///ADMIN ROUTES FOR MANAGING USERS WISHLISTS...
+
 //For testing purpose only
 export const deleteOrder = async (
   req: Request,

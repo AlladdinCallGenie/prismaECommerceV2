@@ -5,6 +5,7 @@ import userRoutes from "./Routes/user";
 import productRoutes from "./Routes/products";
 import cartRoutes from "./Routes/cart";
 import orderRoutes from "./Routes/order";
+import wishlistRoutes from "./Routes/wishlist";
 import { errorHandler } from "./Utils/errorHandler";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
@@ -30,6 +31,7 @@ app.use("/api/user", userRoutes); //Done
 app.use("/api/products", productRoutes); //Done
 app.use("/api/cart", cartRoutes); //Done
 app.use("/api/order", orderRoutes); //Done
+app.use("/api/wishlist", wishlistRoutes); // Not Done
 
 app.use(errorHandler);
 app.listen(PORT, () => {
