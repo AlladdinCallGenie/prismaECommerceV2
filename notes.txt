@@ -440,13 +440,13 @@ export const placeOrder = async (
     
     
 // sms   
-const accountSid = 'ACb0bb43104c2c21daebc0b0cedf226411';
-const authToken = 'd2048fb3a27bd21e1509f92c6b70fd51';
+const accountSid = 'abs';
+const authToken = 'dasd';
 const client = require('twilio')(accountSid, authToken);
 
-client.verify.v2.services("VAe84d4d13ca3541f1639ecd0ccac2cf6c")
+client.verify.v2.services("abc")
       .verifications
-      .create({to: '+919594331924', channel: 'sms'})
+      .create({to: '+91951924', channel: 'sms'})
       .then(verification => console.log(verification.sid));
     
     
